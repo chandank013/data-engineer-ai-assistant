@@ -1,11 +1,10 @@
----
 ## 1️⃣ Clone the Repository
 
 Open a terminal and run:
 
-```bash
+
 git clone https://github.com/chandan013/data-engineer-ai-assistant.git
-``` 
+
 # Move into the project directory
 cd data-engineer-ai-assistant
 
