@@ -1,0 +1,39 @@
+# Core web framework
+flask==3.0.0
+flask-cors==4.0.0
+python-dotenv==1.0.0
+werkzeug==3.0.3
+
+# LangChain + LLM
+langchain==0.2.0
+langchain-community==0.2.0
+langchain-groq==0.1.6
+langchain-text-splitters==0.2.0
+
+# Vector store + embeddings
+faiss-cpu==1.8.0
+sentence-transformers==3.0.0
+
+# Big data
+pyspark==3.5.1
+
+# Data processing
+pandas==2.2.2
+numpy==1.26.4
+openpyxl==3.1.2
+
+# PDF
+pypdf==4.2.0
+
+# Web search / research
+arxiv==2.1.0
+wikipedia==1.4.0
+duckduckgo-search==6.2.1
+
+# SQL databases
+sqlalchemy==2.0.30
+pymysql==1.1.1
+# mysql-connector-python==8.4.0  # alternative MySQL driver (uncomment if needed)
+
+# File uploads
+python-multipart==0.0.9
