@@ -1,0 +1,2631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>AI Data Engineer Assistant</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0b0f;--panel:#111318;--border:#1e2130;
+  --accent:#00d4ff;--accent2:#7c3aed;--accent3:#10b981;
+  --warn:#f59e0b;--danger:#ef4444;--spark:#f97316;--sql:#06b6d4;
+  --text:#e2e8f0;--muted:#64748b;--code:#1a1d27;
+  --hdr:58px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;height:100vh;overflow:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,212,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,.025) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+
+/* ── Header ── */
+header{
+  position:fixed;top:0;left:0;right:0;z-index:200;
+  background:rgba(10,11,15,.96);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+  height:var(--hdr);display:flex;align-items:center;padding:0 1.25rem;gap:1rem;
+}
+.logo{display:flex;align-items:center;gap:.65rem;flex-shrink:0}
+.logo-icon{width:34px;height:34px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:17px}
+.logo-text{font-size:1rem;font-weight:700;letter-spacing:-.02em}
+.logo-text span{color:var(--accent)}
+.hdr-key{display:flex;align-items:center;gap:.5rem;margin-left:auto}
+.hdr-key label{font-size:.68rem;color:var(--muted);font-family:'JetBrains Mono',monospace;white-space:nowrap}
+.hdr-key input{background:var(--panel);border:1px solid var(--border);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:.72rem;padding:.38rem .7rem;border-radius:6px;width:220px}
+.hdr-key input:focus{outline:none;border-color:var(--accent)}
+.hdr-badge{background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.25);color:var(--accent);font-family:'JetBrains Mono',monospace;font-size:.62rem;padding:.22rem .55rem;border-radius:4px;letter-spacing:.05em;white-space:nowrap;flex-shrink:0}
+
+/* ── Layout shell ─── */
+.shell{
+  display:grid;
+  grid-template-columns:220px 1fr;
+  height:100vh;
+  padding-top:var(--hdr);
+}
+
+/* ── Sidebar — sticky, never scrolls with content ── */
+aside{
+  position:sticky;top:var(--hdr);
+  height:calc(100vh - var(--hdr));
+  background:var(--panel);
+  border-right:1px solid var(--border);
+  padding:1rem 0;
+  display:flex;flex-direction:column;gap:.15rem;
+  overflow-y:auto;overflow-x:hidden;
+  flex-shrink:0;z-index:100;
+}
+.nav-sec{padding:.4rem 1rem .15rem;font-size:.6rem;font-family:'JetBrains Mono',monospace;color:var(--muted);letter-spacing:.1em;text-transform:uppercase}
+.nav-item{display:flex;align-items:center;gap:.6rem;padding:.56rem 1rem;cursor:pointer;transition:all .15s;border-left:3px solid transparent;color:var(--muted);font-size:.82rem;font-weight:500;white-space:nowrap}
+.nav-item:hover{color:var(--text);background:rgba(255,255,255,.03)}
+.nav-item.active{color:var(--accent);background:rgba(0,212,255,.05);border-left-color:var(--accent)}
+.nav-item .ico{font-size:.9rem;width:18px;text-align:center;flex-shrink:0}
+.nav-div{height:1px;background:var(--border);margin:.35rem .9rem}
+
+/* ── Main content area scrolls independently ── */
+main{
+  height:calc(100vh - var(--hdr));
+  overflow-y:auto;
+  overflow-x:hidden;
+  padding:1.75rem;
+  position:relative;z-index:1;
+}
+.page{display:none;animation:fadeIn .18s ease}
+.page.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── Typography ── */
+h1{font-size:1.6rem;font-weight:800;letter-spacing:-.03em;margin-bottom:.35rem}
+h1 span{color:var(--accent)}
+.subtitle{color:var(--muted);font-size:.85rem;margin-bottom:1.6rem;line-height:1.5}
+
+/* ── Cards ── */
+.card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:1.3rem}
+.card-title{font-size:.73rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-family:'JetBrains Mono',monospace;margin-bottom:.9rem;display:flex;align-items:center;gap:.45rem}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--accent);flex-shrink:0}
+
+/* ── Stats ── */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:.85rem;margin-bottom:1.6rem}
+.stat{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:1rem;position:relative;overflow:hidden}
+.stat::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--sg,linear-gradient(90deg,var(--accent),var(--accent2)))}
+.stat-lbl{font-size:.65rem;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.07em;margin-bottom:.35rem}
+.stat-val{font-size:1.55rem;font-weight:800;letter-spacing:-.04em}
+.stat-sub{font-size:.68rem;color:var(--muted);margin-top:.18rem}
+
+/* ── Upload zone ── */
+.upload-zone{border:2px dashed var(--border);border-radius:12px;padding:2.2rem 1.5rem;text-align:center;cursor:pointer;transition:all .2s;background:rgba(0,212,255,.02)}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--accent);background:rgba(0,212,255,.05)}
+.upload-icon{font-size:2rem;margin-bottom:.65rem}
+.upload-zone h3{font-size:.9rem;font-weight:600;margin-bottom:.35rem}
+.upload-zone p{font-size:.75rem;color:var(--muted)}
+
+/* ── Tables ── */
+.tbl-wrap{overflow-x:auto;border-radius:8px;border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:.79rem}
+thead{background:rgba(255,255,255,.03)}
+th{padding:.6rem .85rem;text-align:left;font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border)}
+td{padding:.62rem .85rem;border-bottom:1px solid rgba(255,255,255,.04)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.02)}
+.res-tbl{max-height:360px;overflow-y:auto}
+
+/* ── Badges / tags ── */
+.tag{border-radius:4px;padding:.12rem .45rem;font-size:.65rem;font-family:'JetBrains Mono',monospace}
+.tag-blue{background:rgba(0,212,255,.1);color:var(--accent)}
+.tag-green{background:rgba(16,185,129,.1);color:var(--accent3)}
+.tag-orange{background:rgba(249,115,22,.1);color:var(--spark)}
+
+/* ── Buttons ── */
+.btn{display:inline-flex;align-items:center;gap:.4rem;padding:.55rem 1.05rem;border-radius:8px;border:none;cursor:pointer;font-size:.82rem;font-weight:600;font-family:'Syne',sans-serif;transition:all .18s;white-space:nowrap}
+.btn-primary{background:linear-gradient(135deg,var(--accent),#0099cc);color:#000}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 18px rgba(0,212,255,.28)}
+.btn-spark{background:linear-gradient(135deg,var(--spark),#dc2626);color:#fff}
+.btn-spark:hover{transform:translateY(-1px);box-shadow:0 4px 18px rgba(249,115,22,.28)}
+.btn-sql{background:linear-gradient(135deg,var(--sql),var(--accent2));color:#fff}
+.btn-sql:hover{transform:translateY(-1px);box-shadow:0 4px 18px rgba(6,182,212,.28)}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--text)}
+.btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+.btn-danger{background:transparent;border:1px solid rgba(239,68,68,.3);color:var(--danger)}
+.btn-danger:hover{background:rgba(239,68,68,.08);border-color:var(--danger)}
+.btn-sm{background:transparent;border:1px solid var(--border);color:var(--muted);padding:.25rem .58rem;border-radius:5px;cursor:pointer;font-size:.7rem;font-family:'JetBrains Mono',monospace;transition:all .15s}
+.btn-sm:hover{border-color:var(--accent);color:var(--accent)}
+
+/* ── Inputs ── */
+input[type=text],input[type=password],input[type=number],textarea,select{background:var(--code);border:1px solid var(--border);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:.8rem;padding:.58rem .85rem;border-radius:8px;width:100%}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,212,255,.07)}
+textarea{resize:vertical;min-height:74px}
+.field-label{font-size:.65rem;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:.28rem}
+
+/* ── DB type toggle ── */
+.db-toggle{display:flex;gap:.4rem;margin-bottom:.9rem;flex-wrap:wrap}
+.db-type-btn{background:var(--code);border:1px solid var(--border);color:var(--muted);padding:.45rem .9rem;border-radius:7px;cursor:pointer;font-size:.78rem;font-weight:600;font-family:'Syne',sans-serif;transition:all .15s}
+.db-type-btn:hover{border-color:var(--accent);color:var(--accent)}
+.db-type-btn.active{background:rgba(0,212,255,.09);border-color:var(--accent);color:var(--accent)}
+
+/* ── Mode tabs ── */
+.mode-tabs{display:flex;gap:.4rem;margin-bottom:.9rem;flex-wrap:wrap}
+.mode-tab{background:var(--code);border:1px solid var(--border);color:var(--muted);padding:.4rem .82rem;border-radius:7px;cursor:pointer;font-size:.76rem;font-weight:600;font-family:'Syne',sans-serif;transition:all .15s}
+.mode-tab:hover{border-color:var(--sql);color:var(--sql)}
+.mode-tab.active{background:rgba(6,182,212,.09);border-color:var(--sql);color:var(--sql)}
+
+/* ── Code blocks ── */
+.code-block{background:var(--code);border:1px solid var(--border);border-radius:8px;padding:.85rem 1rem;font-family:'JetBrains Mono',monospace;font-size:.74rem;color:#a5f3fc;overflow-x:auto;white-space:pre-wrap;word-break:break-all}
+.code-lbl{font-size:.62rem;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.07em;margin-bottom:.38rem}
+
+/* ── Alerts ── */
+.alert{padding:.75rem 1rem;border-radius:8px;font-size:.79rem;margin-bottom:.85rem;display:flex;align-items:flex-start;gap:.6rem;line-height:1.5}
+.alert-info{background:rgba(0,212,255,.07);border:1px solid rgba(0,212,255,.2);color:#a5f3fc}
+.alert-success{background:rgba(16,185,129,.07);border:1px solid rgba(16,185,129,.2);color:#6ee7b7}
+.alert-error{background:rgba(239,68,68,.07);border:1px solid rgba(239,68,68,.2);color:#fca5a5}
+.alert-warn{background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);color:#fcd34d}
+
+/* ── Explanation box ── */
+.explain-box{background:rgba(16,185,129,.04);border:1px solid rgba(16,185,129,.18);border-radius:8px;padding:.9rem 1rem;font-size:.84rem;line-height:1.7;color:#a7f3d0}
+
+/* ── Progress bar ── */
+.progress-wrap{background:var(--code);border:1px solid var(--border);border-radius:8px;padding:1rem 1.1rem}
+.progress-label{font-size:.75rem;font-family:'JetBrains Mono',monospace;color:var(--muted);margin-bottom:.5rem}
+.progress-bar-bg{height:4px;background:var(--border);border-radius:2px;overflow:hidden}
+.progress-bar-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:2px;transition:width .4s ease}
+.progress-steps{display:flex;flex-direction:column;gap:.25rem;margin-top:.6rem}
+.progress-step{font-size:.72rem;font-family:'JetBrains Mono',monospace;color:var(--muted);display:flex;align-items:center;gap:.4rem}
+.progress-step.done{color:var(--accent3)}
+.progress-step.active{color:var(--accent)}
+
+/* ── Chat ── */
+.chat-wrap{display:flex;flex-direction:column;height:calc(100vh - 280px);min-height:380px}
+.chat-msgs{flex:1;overflow-y:auto;padding:.9rem;display:flex;flex-direction:column;gap:.85rem;background:var(--panel);border:1px solid var(--border);border-radius:12px 12px 0 0}
+.chat-bar{display:flex;gap:.6rem;background:var(--panel);border:1px solid var(--border);border-top:none;border-radius:0 0 12px 12px;padding:.85rem}
+.chat-bar input{flex:1}
+.msg{display:flex;gap:.6rem;max-width:88%}
+.msg.user{align-self:flex-end;flex-direction:row-reverse}
+.msg-av{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+.msg.user .msg-av{background:linear-gradient(135deg,var(--accent2),var(--accent))}
+.msg.bot .msg-av{background:linear-gradient(135deg,var(--accent3),#0891b2)}
+.msg-body{background:var(--code);border:1px solid var(--border);border-radius:10px;padding:.65rem .9rem;font-size:.83rem;line-height:1.6}
+.msg.user .msg-body{background:rgba(124,58,237,.14);border-color:rgba(124,58,237,.28)}
+.msg-time{font-size:.6rem;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-top:.2rem}
+.typing{display:flex;gap:4px;padding:.4rem}
+.typing span{width:5px;height:5px;border-radius:50%;background:var(--accent);animation:blink .8s infinite}
+.typing span:nth-child(2){animation-delay:.15s}
+.typing span:nth-child(3){animation-delay:.3s}
+@keyframes blink{0%,80%,100%{transform:scale(.8);opacity:.5}40%{transform:scale(1.2);opacity:1}}
+
+/* ── Quick query chips ── */
+.qq-row{display:flex;flex-wrap:wrap;gap:.38rem;margin-bottom:.85rem}
+.qq{background:var(--code);border:1px solid var(--border);color:var(--muted);padding:.28rem .68rem;border-radius:20px;font-size:.7rem;cursor:pointer;transition:all .15s;font-family:'JetBrains Mono',monospace}
+.qq:hover{border-color:var(--sql);color:var(--sql)}
+
+/* ── Feature cards ── */
+.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.85rem;margin-bottom:1.6rem}
+.feat-card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:1.2rem;transition:border-color .2s;cursor:pointer}
+.feat-card:hover{border-color:var(--accent)}
+.feat-icon{font-size:1.5rem;margin-bottom:.6rem}
+.feat-title{font-size:.85rem;font-weight:700;margin-bottom:.3rem}
+.feat-desc{font-size:.74rem;color:var(--muted);line-height:1.55}
+
+/* ── Grid helpers ── */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:.85rem}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.85rem}
+.mt1{margin-top:.85rem}.mt2{margin-top:1.4rem}
+.flex{display:flex}.flex-col{flex-direction:column}
+.items-c{align-items:center}.gap1{gap:.85rem}.gap05{gap:.42rem}
+.jbet{justify-content:space-between}
+.hidden{display:none!important}
+
+/* ── Loader spinner ── */
+.loader{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .55s linear infinite;display:inline-block;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── Toast ── */
+#toast{position:fixed;bottom:1.5rem;right:1.5rem;z-index:999;display:flex;flex-direction:column;gap:.4rem}
+.toast-item{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:.72rem 1rem;font-size:.79rem;min-width:260px;animation:toastIn .22s ease;display:flex;align-items:center;gap:.6rem}
+.toast-item.success{border-color:rgba(16,185,129,.38)}
+.toast-item.error{border-color:rgba(239,68,68,.38)}
+.toast-item.warn{border-color:rgba(245,158,11,.38)}
+@keyframes toastIn{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:translateX(0)}}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+/* ── Responsive ── */
+@media(max-width:1024px){
+  .stats-row{grid-template-columns:repeat(2,1fr)}
+  .feat-grid{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:768px){
+  .shell{grid-template-columns:1fr}
+  aside{display:none}
+  .g2,.g3{grid-template-columns:1fr}
+  .stats-row,.feat-grid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:480px){
+  .stats-row,.feat-grid{grid-template-columns:1fr}
+  main{padding:1rem}
+}
+</style>
+</head>
+<body>
+
+<!-- ══ HEADER ══ -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">⚡</div>
+    <div class="logo-text">AI <span>Data</span> Engineer</div>
+  </div>
+  <div class="hdr-key">
+    <label>GROQ KEY</label>
+    <input type="password" id="apiKey" placeholder="gsk_...">
+  </div>
+  <span class="hdr-badge">Spark · SQL · RAG</span>
+</header>
+
+<!-- ══ SHELL ══ -->
+<div class="shell">
+
+<!-- ── SIDEBAR (sticky, never scrolls) ── -->
+<aside>
+  <div class="nav-sec">Workspace</div>
+  <div class="nav-item active" onclick="nav('overview')"><span class="ico">🏠</span>Overview</div>
+  <div class="nav-item" onclick="nav('datasets')"><span class="ico">🗄️</span>Datasets</div>
+  <div class="nav-item" onclick="nav('spark')"><span class="ico">⚡</span>Spark Analytics</div>
+  <div class="nav-div"></div>
+  <div class="nav-sec">SQL</div>
+  <div class="nav-item" onclick="nav('sql')"><span class="ico">🤖</span>NL → SQL</div>
+  <div class="nav-item" onclick="nav('sqlraw')"><span class="ico">📝</span>Raw SQL</div>
+  <div class="nav-item" onclick="nav('schema')"><span class="ico">🗂️</span>Schema Explorer</div>
+  <div class="nav-div"></div>
+  <div class="nav-sec">Intelligence</div>
+  <div class="nav-item" onclick="nav('chat')"><span class="ico">💬</span>AI Chat</div>
+  <div class="nav-item" onclick="nav('pdf')"><span class="ico">📄</span>PDF Q&amp;A</div>
+  <div class="nav-item" onclick="nav('json')"><span class="ico">{ }</span>JSON Analytics</div>
+  <div class="nav-div"></div>
+  <div class="nav-sec">System</div>
+  <div class="nav-item" onclick="nav('settings')"><span class="ico">⚙️</span>Settings</div>
+</aside>
+
+<!-- ── MAIN (scrolls independently) ── -->
+<main>
+
+<!-- ══ OVERVIEW ══ -->
+<div class="page active" id="page-overview">
+  <h1>AI <span>Data Engineer</span> Assistant</h1>
+  <p class="subtitle">Natural language interface for Spark analytics, SQL databases, ETL &amp; data research</p>
+  <div class="stats-row" style="grid-template-columns:repeat(4,1fr)">
+    <div class="stat" style="--sg:linear-gradient(90deg,var(--accent),var(--accent2))">
+      <div class="stat-lbl">Datasets</div><div class="stat-val" id="st-files">0</div><div class="stat-sub">CSV · XLSX · JSON</div>
+    </div>
+    <div class="stat" style="--sg:linear-gradient(90deg,var(--spark),#dc2626)">
+      <div class="stat-lbl">Spark Engine</div>
+      <div class="stat-val" id="st-spark-mode" style="font-size:.82rem;padding-top:.28rem">LOCAL</div>
+      <div class="stat-sub" id="st-spark-master" style="font-family:'JetBrains Mono',monospace;font-size:.6rem">env-configurable</div>
+    </div>
+    <div class="stat" style="--sg:linear-gradient(90deg,var(--sql),var(--accent2))">
+      <div class="stat-lbl">Databases</div><div class="stat-val" id="st-dbs">0</div><div class="stat-sub">SQLite files</div>
+    </div>
+    <div class="stat" style="--sg:linear-gradient(90deg,var(--accent3),#0891b2)">
+      <div class="stat-lbl">PDFs Indexed</div><div class="stat-val" id="st-pdfs">0</div><div class="stat-sub">Vector RAG ready</div>
+    </div>
+  </div>
+  <div class="feat-grid">
+    <div class="feat-card" onclick="nav('datasets')"><div class="feat-icon">🗄️</div><div class="feat-title">Dataset Manager</div><div class="feat-desc">Upload CSV/XLSX, preview schema, manage files.</div></div>
+    <div class="feat-card" onclick="nav('spark')"><div class="feat-icon">⚡</div><div class="feat-title">Spark Analytics</div><div class="feat-desc">Plain English → Spark SQL → execute → AI explanation.</div></div>
+    <div class="feat-card" onclick="nav('sql')"><div class="feat-icon">🤖</div><div class="feat-title">NL → SQL</div><div class="feat-desc">AI generates and runs SQL from natural language.</div></div>
+    <div class="feat-card" onclick="nav('sqlraw')"><div class="feat-icon">📝</div><div class="feat-title">Raw SQL Editor</div><div class="feat-desc">Write and execute SQL directly. Full control.</div></div>
+    <div class="feat-card" onclick="nav('chat')"><div class="feat-icon">💬</div><div class="feat-title">AI Chat Agent</div><div class="feat-desc">Web search, Wikipedia, ArXiv, PDF RAG — all in one.</div></div>
+    <div class="feat-card" onclick="nav('pdf')"><div class="feat-icon">📄</div><div class="feat-title">PDF Q&amp;A</div><div class="feat-desc">Upload docs and ask questions via FAISS vector search.</div></div>
+  </div>
+  <div class="alert alert-info"><span>💡</span><span>Enter your <strong>Groq API key</strong> from <a href="https://console.groq.com" target="_blank" style="color:var(--accent)">console.groq.com</a> into the header field above. SQL, Spark, Chat and PDF Q&amp;A all use the same key.</span></div>
+</div>
+
+<!-- ══ DATASETS ══ -->
+<div class="page" id="page-datasets">
+  <h1>Dataset <span>Manager</span></h1>
+  <p class="subtitle">Upload, preview, and manage CSV/XLSX datasets and SQLite databases</p>
+  <div class="g2" style="margin-bottom:1.3rem">
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>Upload File</div>
+      <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+        <div class="upload-icon">📂</div>
+        <h3>Drop file or click to browse</h3>
+        <p>CSV · XLSX · JSON · PDF · SQLite (.db) · Max 1 GB</p>
+      </div>
+      <input type="file" id="fileInput" accept=".csv,.xlsx,.xls,.pdf,.db,.sqlite,.sqlite3" style="display:none" onchange="handleUpload(event)">
+      <div id="uploadStatus" class="mt1 hidden"></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="dot" style="background:var(--accent3)"></span>Quick Actions</div>
+      <label class="field-label">Select Dataset</label>
+      <select id="fileSelect" style="margin-bottom:.75rem"><option value="">— select file —</option></select>
+      <div class="flex gap05" style="flex-wrap:wrap">
+        <button class="btn btn-ghost" onclick="previewDataset()">👁️ Preview</button>
+        <button class="btn btn-spark" onclick="getStats()">📊 Statistics</button>
+        <button class="btn btn-danger" onclick="deleteSelected()">🗑️ Delete</button>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title flex jbet items-c"><span class="flex items-c gap05"><span class="dot"></span>All Files</span><button class="btn-sm" onclick="loadAll()">↻ Refresh</button></div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Filename</th><th>Folder</th><th>Size</th><th>Modified</th><th>Actions</th></tr></thead>
+        <tbody id="filesTable"><tr><td colspan="5" style="text-align:center;color:var(--muted);padding:2rem">No files yet.</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+  <div id="previewSection" class="card mt2 hidden">
+    <div class="card-title"><span class="dot" style="background:var(--accent2)"></span>Preview</div>
+    <div id="previewMeta" class="flex gap05" style="flex-wrap:wrap;margin-bottom:.85rem"></div>
+    <div class="tbl-wrap res-tbl"><table><thead id="previewHead"></thead><tbody id="previewBody"></tbody></table></div>
+  </div>
+  <div id="statsSection" class="card mt2 hidden">
+    <div class="card-title"><span class="dot" style="background:var(--spark)"></span>Spark Statistics</div>
+    <div id="statsContent"></div>
+  </div>
+</div>
+
+<!-- ══ SPARK ══ -->
+<div class="page" id="page-spark">
+  <div class="flex items-c gap1" style="margin-bottom:.35rem">
+    <h1>Spark <span>Analytics</span></h1><span class="tag tag-orange">⚡ PySpark</span>
+  </div>
+  <p class="subtitle">Natural language → Spark SQL → execute → AI explanation. Supports local and Hadoop/HDFS.</p>
+
+  <!-- Spark tip banner — hidden when Java error banner is shown -->
+  <div id="sparkTipBanner" style="display:flex;align-items:center;gap:.6rem;background:rgba(99,102,241,.07);border:1px solid rgba(99,102,241,.2);border-radius:8px;padding:.6rem 1rem;margin-bottom:1rem;font-size:.76rem;color:var(--muted)">
+    <span style="font-size:1rem">💡</span>
+    <span>Ask anything about <strong style="color:var(--text)">Spark, SQL, ETL, Hadoop, Python</strong> or data engineering. AI generates the query, runs it, and explains the result.</span>
+  </div>
+  <!-- Java/Spark error banner (hidden unless error) -->
+  <div id="sparkJavaBanner" style="margin-bottom:1rem"></div>
+
+  <div class="g2" style="margin-bottom:1rem">
+    <div><label class="field-label">Dataset</label><select id="sparkFile"><option value="">— select dataset —</option></select></div>
+    <div><label class="field-label">Folder</label><select id="sparkFolder"><option value="raw">raw</option><option value="processed">processed</option></select></div>
+  </div>
+  <div class="card" style="margin-bottom:1rem">
+    <div class="card-title"><span class="dot" style="background:var(--spark)"></span>Quick Templates</div>
+    <div class="qq-row">
+      <div class="qq" onclick="setQ('sparkQuery',this.textContent)">Show summary statistics</div>
+      <div class="qq" onclick="setQ('sparkQuery',this.textContent)">Find missing values per column</div>
+      <div class="qq" onclick="setQ('sparkQuery',this.textContent)">Top 10 rows by first numeric column</div>
+      <div class="qq" onclick="setQ('sparkQuery',this.textContent)">Count rows per category</div>
+      <div class="qq" onclick="setQ('sparkQuery',this.textContent)">Find duplicate rows</div>
+      <div class="qq" onclick="setQ('sparkQuery',this.textContent)">Min, max and average of all numeric columns</div>
+      <div class="qq" onclick="setQ('sparkQuery',this.textContent)">Detect outliers using 3-sigma rule</div>
+    </div>
+  </div>
+  <div class="card" style="margin-bottom:1rem">
+    <div class="card-title flex jbet items-c">
+      <span class="flex items-c gap05"><span class="dot" style="background:var(--spark)"></span>Natural Language Query</span>
+
+    </div>
+    <textarea id="sparkQuery" placeholder="e.g. Find top 10 products by total sales last month..."></textarea>
+    <div class="flex gap05 mt1">
+      <button class="btn btn-spark" onclick="runSpark()"><span id="sparkTxt">⚡ Run Spark Job</span><div class="loader hidden" id="sparkLoad"></div></button>
+      <button class="btn btn-ghost" onclick="clearSpark()">Clear</button>
+    </div>
+  </div>
+  <!-- Progress indicator shown during long Spark runs -->
+  <div id="sparkProgress" class="progress-wrap mt1 hidden">
+    <div class="progress-label" id="sparkProgressLabel">Initialising...</div>
+    <div class="progress-bar-bg"><div class="progress-bar-fill" id="sparkProgressBar" style="width:5%"></div></div>
+    <div class="progress-steps">
+      <div class="progress-step" id="sp1">○ Starting JVM / Spark session (YARN: 30-120s first run)</div>
+      <div class="progress-step" id="sp2">○ Loading dataset</div>
+      <div class="progress-step" id="sp3">○ Generating SQL with AI</div>
+      <div class="progress-step" id="sp4">○ Executing Spark SQL</div>
+      <div class="progress-step" id="sp5">○ Generating explanation</div>
+    </div>
+  </div>
+  <div id="sparkResults" class="hidden">
+    <div class="card" style="margin-bottom:.85rem"><div class="code-lbl">Generated Spark SQL</div><div class="code-block" id="sparkSQL"></div></div>
+    <div class="card" style="margin-bottom:.85rem">
+      <div class="card-title flex jbet items-c"><span class="flex items-c gap05"><span class="dot" style="background:var(--accent3)"></span>Results</span><span id="sparkCount" class="tag tag-blue"></span></div>
+      <div class="tbl-wrap res-tbl"><table><thead id="sparkRH"></thead><tbody id="sparkRB"></tbody></table></div>
+    </div>
+    <div class="card"><div class="card-title"><span class="dot" style="background:var(--accent2)"></span>AI Explanation</div><div class="explain-box" id="sparkExp"></div></div>
+  </div>
+</div>
+
+<!-- ══ NL → SQL ══ -->
+<div class="page" id="page-sql">
+  <div class="flex items-c gap1" style="margin-bottom:.35rem">
+    <h1>NL <span>→ SQL</span></h1><span class="tag tag-blue">🤖 AI-generated</span>
+  </div>
+  <p class="subtitle">Describe what you want in plain English — AI writes and runs the SQL for you</p>
+
+  <!-- DB connection — self-contained for this page -->
+  <div class="card" style="margin-bottom:1rem">
+    <div class="card-title"><span class="dot" style="background:var(--sql)"></span>Database Connection</div>
+    <div class="db-toggle">
+      <button class="db-type-btn active" id="nlBtnSqlite" onclick="nlSetDb('sqlite')">🗂️ SQLite</button>
+      <button class="db-type-btn" id="nlBtnMysql" onclick="nlSetDb('mysql')">🐬 MySQL</button>
+    </div>
+    <div id="nlSqliteCfg">
+      <label class="field-label">SQLite Database File</label>
+      <select id="nlDbFile"><option value="">— Select uploaded .db file —</option></select>
+      <p style="font-size:.68rem;color:var(--muted);margin-top:.3rem">Upload a .db file in the Datasets tab first.</p>
+    </div>
+    <div id="nlMysqlCfg" class="hidden">
+      <div class="g2" style="margin-bottom:.6rem">
+        <div><label class="field-label">Host</label><input type="text" id="nlMysqlHost" value="127.0.0.1"></div>
+        <div><label class="field-label">Port</label><input type="number" id="nlMysqlPort" value="3306"></div>
+      </div>
+      <div class="g2" style="margin-bottom:.6rem">
+        <div><label class="field-label">Username</label><input type="text" id="nlMysqlUser" value="root"></div>
+        <div><label class="field-label">Password</label><input type="password" id="nlMysqlPass" placeholder="••••••••"></div>
+      </div>
+      <div><label class="field-label">Database Name</label><input type="text" id="nlMysqlDb" placeholder="my_database"></div>
+    </div>
+    <div class="flex gap05 mt1">
+      <button class="btn btn-ghost" onclick="nlLoadSchema()">🔍 Test Connection &amp; Load Schema</button>
+    </div>
+    <div id="nlConnMsg" class="mt1 hidden"></div>
+  </div>
+
+  <!-- Query modes -->
+  <div class="card" style="margin-bottom:1rem">
+    <div class="card-title"><span class="dot" style="background:var(--sql)"></span>Query Mode</div>
+    <div class="mode-tabs">
+      <button class="mode-tab active" id="nlModeNl" onclick="nlSetMode('nl')">🤖 Natural Language → SQL</button>
+      <button class="mode-tab" id="nlModeAgent" onclick="nlSetMode('agent')">🦜 SQL Agent (step-by-step)</button>
+    </div>
+
+    <!-- NL mode -->
+    <div id="nlPanelNl">
+      <div class="qq-row">
+        <div class="qq" onclick="setQ('nlQuery',this.textContent)">Show all tables</div>
+        <div class="qq" onclick="setQ('nlQuery',this.textContent)">Count rows in each table</div>
+        <div class="qq" onclick="setQ('nlQuery',this.textContent)">Show first 10 rows</div>
+        <div class="qq" onclick="setQ('nlQuery',this.textContent)">Find null values per column</div>
+        <div class="qq" onclick="setQ('nlQuery',this.textContent)">Top 10 by highest value</div>
+        <div class="qq" onclick="setQ('nlQuery',this.textContent)">Group by category and count</div>
+        <div class="qq" onclick="setQ('nlQuery',this.textContent)">Show column statistics</div>
+      </div>
+      <textarea id="nlQuery" placeholder="e.g. Find the top 5 customers by total order value this year..."></textarea>
+      <button class="btn btn-sql mt1" onclick="runNlSql()"><span id="nlTxt">🤖 Generate &amp; Run SQL</span><div class="loader hidden" id="nlLoad"></div></button>
+    </div>
+
+    <!-- Agent mode -->
+    <div id="nlPanelAgent" class="hidden">
+      <div class="alert alert-warn" style="font-size:.76rem"><span>⚠️</span><span>Agent mode reasons step-by-step (slower, 30–90 s). Best for complex multi-step queries.</span></div>
+      <textarea id="nlAgentQuery" placeholder="e.g. Find customers who ordered more than average AND had a return..."></textarea>
+      <button class="btn btn-sql mt1" onclick="runNlAgent()"><span id="nlAgentTxt">🦜 Run SQL Agent</span><div class="loader hidden" id="nlAgentLoad"></div></button>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div id="nlResults" class="hidden">
+    <div id="nlSqlCard" class="card hidden" style="margin-bottom:.85rem"><div class="code-lbl">Generated SQL</div><div class="code-block" id="nlGenerated"></div></div>
+    <div class="card" style="margin-bottom:.85rem">
+      <div class="card-title flex jbet items-c"><span class="flex items-c gap05"><span class="dot" style="background:var(--accent3)"></span>Results</span><span id="nlCount" class="tag tag-blue"></span></div>
+      <div class="tbl-wrap res-tbl"><table><thead id="nlRH"></thead><tbody id="nlRB"></tbody></table></div>
+    </div>
+    <div id="nlExpCard" class="card hidden"><div class="card-title"><span class="dot" style="background:var(--accent2)"></span>AI Explanation</div><div class="explain-box" id="nlExp"></div></div>
+    <div id="nlAgentCard" class="card hidden"><div class="card-title"><span class="dot" style="background:var(--accent2)"></span>Agent Response</div><div class="explain-box" id="nlAgentResp"></div></div>
+  </div>
+</div>
+
+<!-- ══ RAW SQL ══ -->
+<div class="page" id="page-sqlraw">
+  <h1>Raw <span>SQL</span> Editor</h1>
+  <p class="subtitle">Write and execute SQL directly — no AI, full control over your query</p>
+
+  <!-- DB connection — fully self-contained for this page -->
+  <div class="card" style="margin-bottom:1rem">
+    <div class="card-title"><span class="dot" style="background:var(--sql)"></span>Database Connection</div>
+    <div class="db-toggle">
+      <button class="db-type-btn active" id="rawBtnSqlite" onclick="rawSetDb('sqlite')">🗂️ SQLite</button>
+      <button class="db-type-btn" id="rawBtnMysql" onclick="rawSetDb('mysql')">🐬 MySQL</button>
+    </div>
+    <div id="rawSqliteCfg">
+      <label class="field-label">SQLite Database File</label>
+      <select id="rawDbFile"><option value="">— Select .db file —</option></select>
+    </div>
+    <div id="rawMysqlCfg" class="hidden">
+      <div class="g2" style="margin-bottom:.6rem">
+        <div><label class="field-label">Host</label><input type="text" id="rawMysqlHost" value="127.0.0.1"></div>
+        <div><label class="field-label">Port</label><input type="number" id="rawMysqlPort" value="3306"></div>
+      </div>
+      <div class="g2" style="margin-bottom:.6rem">
+        <div><label class="field-label">Username</label><input type="text" id="rawMysqlUser" value="root"></div>
+        <div><label class="field-label">Password</label><input type="password" id="rawMysqlPass" placeholder="••••••••"></div>
+      </div>
+      <div><label class="field-label">Database Name</label><input type="text" id="rawMysqlDb" placeholder="my_database"></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:1rem">
+    <div class="card-title"><span class="dot" style="background:var(--sql)"></span>SQL Query</div>
+    <textarea id="rawSql" style="min-height:130px;font-family:'JetBrains Mono',monospace" placeholder="SELECT * FROM students LIMIT 10;&#10;-- Write any SQL here. Results appear below."></textarea>
+    <div class="flex gap05 mt1">
+      <button class="btn btn-sql" onclick="runRawSql()"><span id="rawTxt">▶ Execute SQL</span><div class="loader hidden" id="rawLoad"></div></button>
+      <button class="btn btn-ghost" onclick="setQ('rawSql','')">Clear</button>
+    </div>
+  </div>
+
+  <div id="rawResults" class="hidden">
+    <div class="card">
+      <div class="card-title flex jbet items-c"><span class="flex items-c gap05"><span class="dot" style="background:var(--accent3)"></span>Results</span><span id="rawCount" class="tag tag-blue"></span></div>
+      <div class="tbl-wrap res-tbl"><table><thead id="rawRH"></thead><tbody id="rawRB"></tbody></table></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SCHEMA EXPLORER — ER DIAGRAM ══ -->
+<div class="page" id="page-schema">
+  <h1>Schema <span>Explorer</span></h1>
+  <p class="subtitle">Visual ER diagram — tables, columns, types, row counts and foreign-key relationships</p>
+  <div class="card" style="margin-bottom:1rem">
+    <div class="card-title"><span class="dot" style="background:var(--sql)"></span>Database Connection</div>
+    <div class="db-toggle">
+      <button class="db-type-btn active" id="schBtnSqlite" onclick="schSetDb('sqlite')">🗂️ SQLite</button>
+      <button class="db-type-btn" id="schBtnMysql" onclick="schSetDb('mysql')">🐬 MySQL</button>
+    </div>
+    <div id="schSqliteCfg">
+      <label class="field-label">SQLite Database File</label>
+      <select id="schDbFile"><option value="">— Select .db file —</option></select>
+    </div>
+    <div id="schMysqlCfg" class="hidden">
+      <div class="g2" style="margin-bottom:.6rem">
+        <div><label class="field-label">Host</label><input type="text" id="schMysqlHost" value="127.0.0.1"></div>
+        <div><label class="field-label">Port</label><input type="number" id="schMysqlPort" value="3306"></div>
+      </div>
+      <div class="g2" style="margin-bottom:.6rem">
+        <div><label class="field-label">Username</label><input type="text" id="schMysqlUser" value="root"></div>
+        <div><label class="field-label">Password</label><input type="password" id="schMysqlPass" placeholder="••••••••"></div>
+      </div>
+      <div><label class="field-label">Database Name</label><input type="text" id="schMysqlDb" placeholder="my_database"></div>
+    </div>
+    <button class="btn btn-sql mt1" onclick="runSchema()"><span id="schTxt">🔍 Generate ER Diagram</span><div class="loader hidden" id="schLoad"></div></button>
+  </div>
+
+  <!-- ER diagram canvas -->
+  <div id="schResult" class="hidden">
+    <div class="card" style="margin-bottom:.85rem">
+      <div class="card-title flex jbet items-c">
+        <span class="flex items-c gap05"><span class="dot" style="background:var(--sql)"></span>Entity-Relationship Diagram</span>
+        <div class="flex gap05">
+          <span id="schTableCount" class="tag tag-blue"></span>
+          <button class="btn-sm" onclick="erZoom(1.15)">＋</button>
+          <button class="btn-sm" onclick="erZoom(0.87)">－</button>
+          <button class="btn-sm" onclick="erReset()">Reset</button>
+        </div>
+      </div>
+      <!-- SVG canvas for ER diagram -->
+      <div id="erWrap" style="width:100%;overflow:auto;background:var(--code);border-radius:8px;border:1px solid var(--border);min-height:420px;position:relative;cursor:grab">
+        <svg id="erSvg" style="min-width:100%;display:block"></svg>
+      </div>
+      <p style="font-size:.67rem;color:var(--muted);margin-top:.45rem;font-family:'JetBrains Mono',monospace">
+        🔗 Dashed lines = inferred FK relationships (column name matching). Drag to scroll. Use +/– to zoom.
+      </p>
+    </div>
+
+    <!-- Table detail list below diagram -->
+    <div class="card">
+      <div class="card-title"><span class="dot" style="background:var(--accent2)"></span>Table Details</div>
+      <div id="schTableList" style="display:flex;flex-direction:column;gap:.6rem"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ AI CHAT ══ -->
+<div class="page" id="page-chat">
+  <h1>AI <span>Chat</span> Agent</h1>
+  <p class="subtitle">Multi-tool agent — web search · Wikipedia · ArXiv · PDF RAG · data engineering expertise</p>
+  <div class="flex gap05 items-c" style="margin-bottom:.85rem">
+    <div style="flex:1"><div class="alert alert-info" style="margin:0"><span>💡</span><span>Ask anything about Spark, SQL, ETL, Hadoop, Python or data engineering. Responds in seconds.</span></div></div>
+    <button class="btn btn-ghost" style="flex-shrink:0" onclick="clearChat()">🗑️ Clear</button>
+  </div>
+  <div class="chat-wrap">
+    <div class="chat-msgs" id="chatMsgs">
+      <div class="msg bot">
+        <div class="msg-av">🤖</div>
+        <div><div class="msg-body">Hello! I'm your AI Data Engineer Assistant.<br><br>
+I can help with:<br>
+• <strong>Spark &amp; SQL</strong> — code, concepts, optimisation<br>
+• <strong>ETL &amp; Hadoop/HDFS</strong> — pipelines and config<br>
+• <strong>Research papers</strong> — via ArXiv search<br>
+• <strong>Current info</strong> — web search (DDG + Wikipedia)<br>
+• <strong>PDF Q&amp;A</strong> — select a PDF above and ask anything<br><br>
+Set your Groq API key in the header to begin.</div>
+<div class="msg-time">System</div></div>
+      </div>
+    </div>
+    <div class="chat-bar">
+      <input type="text" id="chatInput" placeholder="Ask about Spark, SQL, ETL, Hadoop..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}">
+      <button class="btn btn-primary" onclick="sendChat()"><span id="chatTxt">Send</span><div class="loader hidden" id="chatLoad"></div></button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PDF Q&A ══ -->
+<div class="page" id="page-pdf">
+  <h1>PDF <span>Q&amp;A</span></h1>
+  <p class="subtitle">Upload engineering documents and ask questions — powered by FAISS vector search</p>
+  
+  <div class="g2" style="margin-bottom:1.3rem">
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>Upload PDF</div>
+      <div class="upload-zone" onclick="document.getElementById('pdfInput').click()" style="padding:2rem">
+        <div class="upload-icon">📄</div>
+        <h3>Upload PDF Document</h3>
+        <p>Engineering docs · Papers · Manuals</p>
+      </div>
+      <input type="file" id="pdfInput" accept=".pdf" style="display:none" onchange="handleUpload(event)">
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="dot" style="background:var(--accent3)"></span>Indexed PDFs</div>
+      <ul id="pdfList" style="list-style:none;display:flex;flex-direction:column;gap:.4rem"><li style="color:var(--muted);font-size:.79rem">No PDFs yet.</li></ul>
+      <div class="mt2"><label class="field-label">Select PDF for Q&amp;A</label><select id="pdfQaSel"><option value="">— select PDF —</option></select></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="dot" style="background:var(--accent2)"></span>Ask a Question</div>
+    <textarea id="pdfQuery" placeholder="What are the main findings?&#10;Summarise section 3&#10;What methodology was used?"></textarea>
+    <button class="btn btn-primary mt1" onclick="askPdf()"><span id="pdfTxt">🔍 Search PDF</span><div class="loader hidden" id="pdfLoad"></div></button>
+  </div>
+  <div id="pdfResult" class="card mt2 hidden">
+    <div class="card-title"><span class="dot" style="background:var(--accent3)"></span>Answer</div>
+    <div class="explain-box" id="pdfAnswer"></div>
+  </div>
+</div>
+
+
+<!-- ══ JSON ANALYTICS ══ -->
+<div class="page" id="page-json">
+  <div class="flex items-c gap1" style="margin-bottom:.35rem">
+    <h1>JSON <span>Analytics</span></h1>
+    <span class="tag tag-green">{ } pandas</span>
+  </div>
+  <p class="subtitle">Upload JSON files, explore structure, run natural language queries — no Spark needed</p>
+
+  <!-- Upload + File selector -->
+  <div class="g2" style="margin-bottom:1rem">
+    <div class="card">
+      <div class="card-title"><span class="dot" style="background:var(--accent3)"></span>Upload JSON File</div>
+      <div class="upload-zone" id="jsonUploadZone" onclick="document.getElementById('jsonFileInput').click()" style="padding:1.6rem">
+        <div class="upload-icon" style="font-size:1.5rem">{ }</div>
+        <h3 style="font-size:.88rem">Drop JSON or click to browse</h3>
+        <p>Array of objects · Wrapped records · Max 1 GB</p>
+      </div>
+      <input type="file" id="jsonFileInput" accept=".json" style="display:none" onchange="handleJsonUpload(event)">
+      <div id="jsonUploadStatus" class="mt1 hidden"></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="dot" style="background:var(--sql)"></span>Select &amp; Analyze</div>
+      <label class="field-label">JSON File</label>
+      <select id="jsonFile" style="margin-bottom:.7rem"><option value="">— select .json file —</option></select>
+      <label class="field-label">Folder</label>
+      <select id="jsonFolder" style="margin-bottom:.85rem"><option value="raw">raw</option><option value="processed">processed</option></select>
+      <div class="flex gap05" style="flex-wrap:wrap">
+        <button class="btn btn-ghost" onclick="jsonPreview()">👁️ Preview</button>
+        <button class="btn btn-primary" onclick="jsonAnalyze()"><span id="jsonAnalyzeTxt">🔍 Deep Analyze</span><div class="loader hidden" id="jsonAnalyzeLoad"></div></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Analysis results -->
+  <div id="jsonAnalyzeResults" class="hidden">
+    <!-- Overview stats -->
+    <div class="g3" style="margin-bottom:1rem" id="jsonStatCards"></div>
+
+    <!-- Schema -->
+    <div class="card" style="margin-bottom:1rem">
+      <div class="card-title"><span class="dot" style="background:var(--accent3)"></span>Schema &amp; Types</div>
+      <div class="tbl-wrap">
+        <table><thead><tr><th>Field</th><th>Type</th><th>Nulls</th><th>% Missing</th></tr></thead>
+        <tbody id="jsonSchemaBody"></tbody></table>
+      </div>
+    </div>
+
+    <!-- Value distributions -->
+    <div id="jsonDistCard" class="card hidden" style="margin-bottom:1rem">
+      <div class="card-title"><span class="dot" style="background:var(--accent2)"></span>Value Distributions (top string fields)</div>
+      <div id="jsonDistContent" style="display:flex;flex-wrap:wrap;gap:.7rem"></div>
+    </div>
+
+    <!-- Numeric summary -->
+    <div id="jsonNumCard" class="card hidden" style="margin-bottom:1rem">
+      <div class="card-title"><span class="dot" style="background:var(--spark)"></span>Numeric Summary</div>
+      <div class="tbl-wrap">
+        <table><thead><tr><th>Field</th><th>Min</th><th>Max</th><th>Mean</th><th>Nulls</th></tr></thead>
+        <tbody id="jsonNumBody"></tbody></table>
+      </div>
+    </div>
+
+    <!-- Sample records -->
+    <div class="card" style="margin-bottom:1rem">
+      <div class="card-title"><span class="dot"></span>Sample Records (first 5)</div>
+      <div class="tbl-wrap res-tbl"><table><thead id="jsonSampleHead"></thead><tbody id="jsonSampleBody"></tbody></table></div>
+    </div>
+  </div>
+
+  <!-- Preview results -->
+  <div id="jsonPreviewSection" class="card hidden" style="margin-bottom:1rem">
+    <div class="card-title flex jbet items-c">
+      <span class="flex items-c gap05"><span class="dot" style="background:var(--accent2)"></span>Preview</span>
+      <span id="jsonPreviewMeta" class="tag tag-blue"></span>
+    </div>
+    <div class="tbl-wrap res-tbl"><table><thead id="jsonPreviewHead"></thead><tbody id="jsonPreviewBody"></tbody></table></div>
+  </div>
+
+  <!-- NL Query -->
+  <div class="card" style="margin-bottom:1rem">
+    <div class="card-title"><span class="dot" style="background:var(--sql)"></span>Natural Language Query</div>
+    <div class="qq-row">
+      <div class="qq" onclick="setQ('jsonQuery',this.textContent)">Count records by category</div>
+      <div class="qq" onclick="setQ('jsonQuery',this.textContent)">Find records where a value is missing</div>
+      <div class="qq" onclick="setQ('jsonQuery',this.textContent)">Top 10 by highest numeric value</div>
+      <div class="qq" onclick="setQ('jsonQuery',this.textContent)">Group by field and count</div>
+      <div class="qq" onclick="setQ('jsonQuery',this.textContent)">Show unique values in each column</div>
+      <div class="qq" onclick="setQ('jsonQuery',this.textContent)">Filter records matching a condition</div>
+      <div class="qq" onclick="setQ('jsonQuery',this.textContent)">Show summary statistics for all numbers</div>
+    </div>
+    <textarea id="jsonQuery" placeholder="e.g. Find the top 5 users by total purchase amount..."></textarea>
+    <button class="btn btn-sql mt1" onclick="runJsonQuery()"><span id="jsonQueryTxt">🤖 Run Query</span><div class="loader hidden" id="jsonQueryLoad"></div></button>
+  </div>
+
+  <!-- Query results -->
+  <div id="jsonQueryResults" class="hidden">
+    <div class="card" style="margin-bottom:.85rem">
+      <div class="code-lbl">Generated pandas code</div>
+      <div class="code-block" id="jsonCode"></div>
+    </div>
+    <div class="card" style="margin-bottom:.85rem">
+      <div class="card-title flex jbet items-c">
+        <span class="flex items-c gap05"><span class="dot" style="background:var(--accent3)"></span>Results</span>
+        <span id="jsonQueryCount" class="tag tag-blue"></span>
+      </div>
+      <div class="tbl-wrap res-tbl"><table><thead id="jsonQueryRH"></thead><tbody id="jsonQueryRB"></tbody></table></div>
+    </div>
+    <div class="card"><div class="card-title"><span class="dot" style="background:var(--accent2)"></span>Explanation</div>
+      <div class="explain-box" id="jsonQueryExp"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SETTINGS ══ -->
+<div class="page" id="page-settings">
+  <h1><span>Settings</span></h1>
+  <p class="subtitle">Backend connection, API keys, and Spark/Hadoop configuration</p>
+  <div class="g2">
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>Connection</div>
+      <label class="field-label">Groq API Key</label>
+      <input type="password" id="settingsKey" placeholder="gsk_..." oninput="document.getElementById('apiKey').value=this.value">
+      <p style="font-size:.7rem;color:var(--muted);margin-top:.35rem">Get key at <a href="https://console.groq.com" target="_blank" style="color:var(--accent)">console.groq.com</a></p>
+      <label class="field-label" style="margin-top:.85rem">Backend URL</label>
+      <input type="text" id="backendUrl" value="http://localhost:5000">
+      <div class="flex gap05 mt1">
+        <button class="btn btn-primary" onclick="testConn()">🔌 Test Connection</button>
+      </div>
+      <div id="connStatus" class="mt1 hidden"></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="dot" style="background:var(--spark)"></span>Spark / Hadoop (.env)</div>
+      <div class="db-toggle" style="margin-bottom:.75rem">
+        <button class="db-type-btn active" id="envTabLocal"  onclick="showEnvTab('local')">💻 Local Mode</button>
+        <button class="db-type-btn"         id="envTabYarn"   onclick="showEnvTab('yarn')">🐘 Hadoop YARN</button>
+        <button class="db-type-btn"         id="envTabSpark"  onclick="showEnvTab('standalone')">⚡ Standalone</button>
+      </div>
+      <div id="envLocal">
+        <div class="code-block" style="font-size:.69rem"># Paste into your .env file
+SPARK_MASTER=local[*]
+SPARK_DRIVER_MEMORY=2g
+SPARK_SHUFFLE_PARTITIONS=4
+# local[*] = all CPU cores  |  local[2] = limit to 2 cores</div>
+        <div style="font-size:.72rem;color:var(--muted);margin-top:.55rem;line-height:1.75">
+          ✅ No cluster needed — runs on your machine<br>
+          ✅ Files uploaded through the Datasets tab (local disk)<br>
+          ✅ Best for development, testing and datasets under 10 GB
+        </div>
+      </div>
+      <div id="envYarn" class="hidden">
+        <div class="code-block" style="font-size:.69rem"># Paste into your .env file
+SPARK_MASTER=yarn
+HDFS_NAMENODE=hdfs://namenode:9000
+YARN_RESOURCE_MANAGER=resourcemanager:8032
+SPARK_EXECUTOR_MEMORY=4g
+SPARK_EXECUTOR_CORES=2
+SPARK_NUM_EXECUTORS=4
+SPARK_DRIVER_MEMORY=4g</div>
+        <div style="font-size:.72rem;color:var(--muted);margin-top:.55rem;line-height:1.75">
+          ⚠️ Also set <code>HADOOP_CONF_DIR</code> to your cluster's config folder<br>
+          ⚠️ Your machine must be able to reach the namenode over the network<br>
+          ✅ Scales to TB-size datasets across many nodes
+        </div>
+      </div>
+      <div id="envStandalone" class="hidden">
+        <div class="code-block" style="font-size:.69rem"># Paste into your .env file
+SPARK_MASTER=spark://master-host:7077
+SPARK_EXECUTOR_MEMORY=4g
+SPARK_EXECUTOR_CORES=2
+SPARK_NUM_EXECUTORS=4
+SPARK_DRIVER_MEMORY=4g</div>
+        <div style="font-size:.72rem;color:var(--muted);margin-top:.55rem;line-height:1.75">
+          ⚠️ Requires a running Spark master at spark://master-host:7077<br>
+          ✅ Good for dedicated Spark clusters without Hadoop/YARN
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="card mt2">
+    <div class="card-title flex jbet items-c">
+      <span class="flex items-c gap05"><span class="dot" style="background:var(--spark)"></span>Execution Environment</span>
+      <button class="btn-sm" onclick="loadSparkMode()">↻ Refresh</button>
+    </div>
+    <p style="font-size:.7rem;color:var(--muted);margin-bottom:.7rem;line-height:1.65">
+      Live view of your current Spark/Hadoop configuration read from <code>.env</code>.
+      When running <strong>Hadoop YARN</strong> mode, the switch guide below shows how to
+      go back to local. When in <strong>local mode</strong>, it shows the full WSL2 setup
+      steps to switch to Hadoop.
+    </p>
+    <div id="sparkModeContentSettings">
+      <div class="alert alert-info" style="margin:0"><div class="loader" style="display:inline-block;margin-right:.5rem"></div>Loading Spark configuration…</div>
+    </div>
+  </div>
+
+  <!-- HDFS Status — shows "not configured" in local mode, file list in YARN mode -->
+  <div class="card mt2">
+    <div class="card-title flex jbet items-c">
+      <span class="flex items-c gap05"><span class="dot" style="background:#0ea5e9"></span>HDFS Status &amp; Files</span>
+      <button class="btn-sm" onclick="loadHdfsStatus()">↻ Refresh</button>
+    </div>
+    <p style="font-size:.7rem;color:var(--muted);margin-bottom:.7rem;line-height:1.65">
+      Shows the HDFS filesystem status and files in <code>/data/</code>.
+      In <strong>local mode</strong> this will show "not configured" — that is normal.
+      In <strong>Hadoop YARN mode</strong> it lists every file synced to HDFS so you can
+      confirm uploads reached the cluster. If you see "hdfs command not found" it means
+      Hadoop is not yet installed — follow the WSL2 setup guide in the switch guide below.
+    </p>
+    <div id="hdfsStatusContent">
+      <div class="alert alert-info" style="margin:0"><div class="loader" style="display:inline-block;margin-right:.5rem"></div>Checking HDFS…</div>
+    </div>
+  </div>
+
+  <div class="card mt2">
+    <div class="card-title"><span class="dot" style="background:var(--accent2)"></span>Data Flow: Browser → HDFS → Spark</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:.7rem;line-height:2;color:var(--muted);background:var(--code);border-radius:8px;padding:1rem 1.2rem;overflow-x:auto">
+<span style="color:#f59e0b">[ Browser ]</span>  →  Upload CSV/XLSX/JSON via Datasets tab
+    ↓
+<span style="color:var(--accent)">[ Flask  ]</span>  →  Saves to  <span style="color:#a5f3fc">data/raw/filename.csv</span>  (local disk)
+    ↓  <span style="color:var(--muted)">(if HDFS_NAMENODE set in .env)</span>
+<span style="color:#10b981">[ HDFS   ]</span>  →  Auto-syncs to  <span style="color:#a5f3fc">hdfs://namenode:9000/data/raw/filename.csv</span>
+    ↓
+<span style="color:var(--spark)">[ Spark  ]</span>  →  Reads from HDFS (YARN mode) or local (local[*] mode)
+    ↓
+<span style="color:var(--accent)">[ Flask  ]</span>  →  Returns results to browser  ✅
+    </div>
+    <div style="margin-top:.75rem;font-size:.72rem;color:var(--muted);line-height:1.8">
+      <strong style="color:var(--text)">How auto-sync works:</strong> Every time you upload a CSV, XLSX or JSON file through the Datasets tab,
+      Flask automatically runs <code>hdfs dfs -put -f file /data/raw/file</code> in the background —
+      <em>only when <code>HDFS_NAMENODE</code> is set in your <code>.env</code></em>.
+      In local mode the HDFS step is skipped silently.
+    </div>
+  </div>
+</div>
+
+</main>
+</div><!-- /shell -->
+
+<div id="toast"></div>
+
+<script>
+'use strict';
+
+// Core utilities
+const API = () => (document.getElementById('backendUrl')?.value.trim()) || 'http://localhost:5000';
+const KEY = () => document.getElementById('apiKey').value.trim();
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const now = () => new Date().toLocaleTimeString();
+const fmtSize = b => b < 1024 ? b+' B' : b < 1048576 ? (b/1024).toFixed(1)+' KB' : (b/1048576).toFixed(1)+' MB';
+
+async function apiFetch(path, options = {}, timeoutMs = 120000) {
+  const url = API() + path;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const resp = await fetch(url, { ...options, signal: controller.signal });
+    clearTimeout(timer);
+    return resp;
+  } catch (e) {
+    clearTimeout(timer);
+    if (e.name === 'AbortError')
+      throw new Error(`Request timed out (${timeoutMs/1000}s). Is Flask running at ${API()}? Run: python app.py`);
+    throw new Error(`Cannot reach ${API()} — run: python app.py`);
+  }
+}
+
+async function fetchJSON(path, body = null, method = null, timeoutMs = 120000) {
+  const opts = { headers: { 'Content-Type': 'application/json' } };
+  opts.method = method || (body ? 'POST' : 'GET');
+  if (body) opts.body = JSON.stringify(body);
+  try {
+    const r = await apiFetch(path, opts, timeoutMs);
+    const d = await r.json();
+    if (!r.ok) return { error: d.error || `Server error ${r.status}` };
+    return d;
+  } catch (e) {
+    return { error: e.message };
+  }
+}
+
+function toast(msg, type = 'info') {
+  const el = document.createElement('div');
+  el.className = `toast-item ${type}`;
+  const icon = { success:'✅', error:'❌', warn:'⚠️', info:'ℹ️' }[type] || 'ℹ️';
+  el.innerHTML = `<span>${icon}</span><span>${esc(msg)}</span>`;
+  document.getElementById('toast').appendChild(el);
+  setTimeout(() => el.remove(), 5000);
+}
+
+function setBusy(txtId, loadId, busy, label) {
+  const t = document.getElementById(txtId);
+  const l = document.getElementById(loadId);
+  if (t) t.textContent = busy ? 'Working…' : label;
+  if (l) l.classList.toggle('hidden', !busy);
+}
+
+function renderTable(headId, bodyId, columns, rows) {
+  document.getElementById(headId).innerHTML =
+    '<tr>' + columns.map(c => `<th>${esc(c)}</th>`).join('') + '</tr>';
+  document.getElementById(bodyId).innerHTML = rows.length
+    ? rows.map(row => '<tr>' + row.map(v =>
+        `<td style="font-size:.74rem;font-family:'JetBrains Mono',monospace">${
+          v === null || v === '' ? '<em style="color:var(--muted)">—</em>' : esc(String(v))
+        }</td>`).join('') + '</tr>').join('')
+    : '<tr><td colspan="99" style="text-align:center;color:var(--muted);padding:1.5rem">No results.</td></tr>';
+}
+
+function setQ(id, val) { const el = document.getElementById(id); if (el) el.value = val; }
+
+// Navigation
+function nav(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const pg = document.getElementById('page-' + name);
+  if (pg) pg.classList.add('active');
+  // Highlight matching nav item
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.getAttribute('onclick') === `nav('${name}')`) n.classList.add('active');
+  });
+  // Side-effect data loads
+  if (['datasets','spark'].includes(name)) loadFiles();
+  if (name === 'spark') { loadSparkMode(); checkJavaStatus(); }
+  if (['sql','sqlraw','schema'].includes(name)) loadDatabases();
+  if (['chat','pdf'].includes(name)) loadPdfs();
+  if (name === 'json') loadJsonFiles();
+  if (name === 'settings') { loadSparkMode(); loadHdfsStatus(); }
+  if (name === 'overview') loadAll();
+}
+
+// Server health check (shown in header)
+
+// Data loaders
+async function loadFiles() {
+  const d = await fetchJSON('/api/files');
+  if (d.error) return;
+  const files = d.files || [];
+  const stEl = document.getElementById('st-files');
+  if (stEl) stEl.textContent = files.length;
+  const tbody = document.getElementById('filesTable');
+  if (tbody) {
+    tbody.innerHTML = files.length
+      ? files.map(f => `<tr>
+          <td style="font-family:'JetBrains Mono',monospace;font-size:.75rem">${esc(f.name)}</td>
+          <td><span class="tag ${f.folder==='raw'?'tag-blue':'tag-green'}">${f.folder}</span></td>
+          <td style="color:var(--muted);font-size:.75rem">${fmtSize(f.size)}</td>
+          <td style="color:var(--muted);font-size:.75rem">${new Date(f.modified*1000).toLocaleDateString()}</td>
+          <td>
+            <button class="btn-sm" onclick="qPreview('${esc(f.name)}','${f.folder}')">Preview</button>
+            <button class="btn-sm" style="color:var(--danger)" onclick="delFile('${esc(f.name)}','${f.folder}')">Delete</button>
+          </td>
+        </tr>`).join('')
+      : '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:2rem">No files. Upload one above.</td></tr>';
+  }
+  const opts = '<option value="">— select file —</option>' +
+    files.map(f => `<option value="${esc(f.name)}" data-folder="${f.folder}">${esc(f.name)} (${f.folder})</option>`).join('');
+  ['fileSelect','sparkFile'].forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = opts; });
+}
+
+async function loadDatabases() {
+  const d = await fetchJSON('/api/databases');
+  if (d.error) return;
+  const dbs = d.databases || [];
+  const stEl = document.getElementById('st-dbs');
+  if (stEl) stEl.textContent = dbs.length;
+  const opts = '<option value="">— Select .db file —</option>' +
+    dbs.map(db => `<option value="${esc(db)}">${esc(db)}</option>`).join('');
+  // Each SQL page has its own selects — all get the same options
+  ['nlDbFile','rawDbFile','schDbFile'].forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = opts; });
+}
+
+async function loadPdfs() {
+  const d = await fetchJSON('/api/pdfs');
+  if (d.error) return;
+  const pdfs = d.pdfs || [];
+  const stEl = document.getElementById('st-pdfs');
+  if (stEl) stEl.textContent = pdfs.length;
+  const list = document.getElementById('pdfList');
+  if (list) list.innerHTML = pdfs.length
+    ? pdfs.map(p => `<li class="flex jbet items-c" style="padding:.2rem 0">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:.75rem">📄 ${esc(p)}</span>
+        <button class="btn-sm" style="color:var(--danger)" onclick="delFile('${esc(p)}','uploads')">Delete</button>
+      </li>`).join('')
+    : '<li style="color:var(--muted);font-size:.79rem">No PDFs yet.</li>';
+  const opts = '<option value="">No PDF — web tools only</option>' +
+    pdfs.map(p => `<option value="${esc(p)}">${esc(p)}</option>`).join('');
+  const pdfSel = document.getElementById('pdfQaSel'); if (pdfSel) pdfSel.innerHTML = opts;
+}
+
+function loadAll() { loadFiles(); loadDatabases(); loadPdfs(); }
+
+// File management
+function handleUpload(e) { const f = e.target.files[0]; if (f) uploadFile(f); }
+
+async function uploadFile(file) {
+  const s = document.getElementById('uploadStatus');
+  if (s) { s.classList.remove('hidden'); s.innerHTML = '<div class="alert alert-info"><div class="loader"></div>&nbsp;Uploading...</div>'; }
+  const fd = new FormData(); fd.append('file', file);
+  try {
+    const r = await apiFetch('/api/upload', { method: 'POST', body: fd }, 60000);
+    const d = await r.json();
+    if (d.error) {
+      if (s) s.innerHTML = `<div class="alert alert-error">❌ ${esc(d.error)}</div>`;
+      toast(d.error, 'error');
+    } else {
+      if (s) s.innerHTML = `<div class="alert alert-success">✅ ${esc(d.message)}</div>`;
+      toast(d.message, 'success'); loadAll();
+    }
+  } catch (e) {
+    if (s) s.innerHTML = `<div class="alert alert-error">❌ ${esc(e.message)}</div>`;
+    toast(e.message, 'error');
+  }
+}
+
+async function delFile(fn, folder) {
+  if (!confirm(`Delete "${fn}"?`)) return;
+  const d = await fetchJSON('/api/delete', { filename: fn, folder }, 'DELETE');
+  if (d.error) toast(d.error, 'error');
+  else { toast(d.message, 'success'); loadAll(); }
+}
+
+function deleteSelected() {
+  const s = document.getElementById('fileSelect');
+  const o = s?.options[s.selectedIndex];
+  if (!o?.value) { toast('Select a file first', 'error'); return; }
+  delFile(o.value, o.dataset.folder || 'raw');
+}
+
+async function qPreview(fn, folder) { nav('datasets'); await previewInner(fn, folder); }
+
+async function previewDataset() {
+  const s = document.getElementById('fileSelect');
+  const o = s?.options[s.selectedIndex];
+  if (!o?.value) { toast('Select a file first', 'error'); return; }
+  await previewInner(o.value, o.dataset.folder || 'raw');
+}
+
+async function previewInner(fn, folder) {
+  const sec = document.getElementById('previewSection');
+  const d = await fetchJSON('/api/preview', { filename: fn, folder });
+  if (d.error) { toast(d.error, 'error'); return; }
+  sec.classList.remove('hidden');
+  document.getElementById('previewMeta').innerHTML =
+    `<span class="tag tag-blue">${d.shape[0]} rows</span><span class="tag tag-blue">${d.shape[1]} cols</span>` +
+    Object.entries(d.dtypes).map(([c,t]) => `<span class="tag tag-green">${esc(c)}: ${esc(t)}</span>`).join('');
+  renderTable('previewHead', 'previewBody', d.columns, d.rows);
+}
+
+async function getStats() {
+  const s = document.getElementById('fileSelect');
+  const o = s?.options[s.selectedIndex];
+  if (!o?.value) { toast('Select a file first', 'error'); return; }
+  const sec = document.getElementById('statsSection');
+  const cnt = document.getElementById('statsContent');
+  sec.classList.remove('hidden');
+  cnt.innerHTML = '<div class="alert alert-info"><div class="loader"></div>&nbsp;Running Spark statistics... (first run may take 30–60 s)</div>';
+  const d = await fetchJSON('/api/stats', { filename: o.value, folder: o.dataset.folder || 'raw' }, null, 120000);
+  if (d.error) { cnt.innerHTML = `<div class="alert alert-error">❌ ${esc(d.error)}</div>`; return; }
+  cnt.innerHTML = `
+    <div class="flex gap05" style="flex-wrap:wrap;margin-bottom:.85rem">
+      <span class="tag tag-blue">${d.total_rows.toLocaleString()} rows</span>
+      <span class="tag tag-blue">${d.total_cols} columns</span>
+    </div>
+    <div class="code-lbl">Null counts per column</div>
+    <div class="tbl-wrap mt1"><table>
+      <thead><tr><th>Column</th><th>Null Count</th><th>% Missing</th></tr></thead>
+      <tbody>${Object.entries(d.null_counts).map(([c,n]) =>
+        `<tr><td style="font-family:'JetBrains Mono',monospace;font-size:.75rem">${esc(c)}</td>
+         <td>${n}</td><td style="color:${n>0?'var(--warn)':'var(--accent3)'}">${((n/d.total_rows)*100).toFixed(1)}%</td></tr>`
+      ).join('')}</tbody>
+    </table></div>`;
+}
+
+// Spark Analytics — with animated progress indicator
+let _sparkProgressTimer = null;
+
+function sparkProgressStart() {
+  const steps = [
+    {id:'sp1', label:'Starting JVM / Spark session', pct:15},
+    {id:'sp2', label:'Loading dataset',               pct:35},
+    {id:'sp3', label:'Generating SQL with AI',        pct:55},
+    {id:'sp4', label:'Executing Spark SQL',           pct:80},
+    {id:'sp5', label:'Generating explanation',        pct:95},
+  ];
+  let step = 0;
+  const prog = document.getElementById('sparkProgress');
+  const bar  = document.getElementById('sparkProgressBar');
+  const lbl  = document.getElementById('sparkProgressLabel');
+  prog.classList.remove('hidden');
+  steps.forEach(s => {
+    const el = document.getElementById(s.id);
+    if (el) el.className = 'progress-step';
+    if (el) el.innerHTML = `○ ${s.label}`;
+  });
+
+  function advance() {
+    if (step > 0) {
+      const prev = document.getElementById(steps[step-1].id);
+      if (prev) { prev.className = 'progress-step done'; prev.innerHTML = `✓ ${steps[step-1].label}`; }
+    }
+    if (step < steps.length) {
+      const cur = document.getElementById(steps[step].id);
+      if (cur) { cur.className = 'progress-step active'; cur.innerHTML = `⟳ ${steps[step].label}`; }
+      if (bar) bar.style.width = steps[step].pct + '%';
+      if (lbl) lbl.textContent = steps[step].label + '…';
+      step++;
+      // Each step advances every 8s (covers ~40s total for first run)
+      _sparkProgressTimer = setTimeout(advance, 8000);
+    }
+  }
+  advance();
+}
+
+function sparkProgressDone() {
+  clearTimeout(_sparkProgressTimer);
+  const prog = document.getElementById('sparkProgress');
+  if (prog) prog.classList.add('hidden');
+  ['sp1','sp2','sp3','sp4','sp5'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.className = 'progress-step done'; }
+  });
+  const bar = document.getElementById('sparkProgressBar');
+  if (bar) bar.style.width = '100%';
+}
+
+function clearSpark() {
+  document.getElementById('sparkResults').classList.add('hidden');
+  document.getElementById('sparkProgress').classList.add('hidden');
+  setQ('sparkQuery', '');
+}
+
+async function runSpark() {
+  const query = document.getElementById('sparkQuery').value.trim();
+  const sel = document.getElementById('sparkFile');
+  const fn = sel?.value;
+  const folder = document.getElementById('sparkFolder')?.value || 'raw';
+  if (!KEY()) { toast('Enter Groq API key in the header', 'error'); return; }
+  if (!query)  { toast('Enter a query', 'error'); return; }
+  if (!fn)     { toast('Select a dataset first', 'error'); return; }
+
+  document.getElementById('sparkResults').classList.add('hidden');
+  setBusy('sparkTxt', 'sparkLoad', true, '⚡ Run Spark Job');
+  sparkProgressStart();
+
+  const d = await fetchJSON('/api/spark', { query, filename: fn, folder, api_key: KEY() }, null, 360000);
+
+  sparkProgressDone();
+  setBusy('sparkTxt', 'sparkLoad', false, '⚡ Run Spark Job');
+
+  if (d.error) {
+    sparkProgressDone();
+    const raw = d.error || '';
+    let title, body, type;
+    if (raw.includes('401') || raw.includes('invalid_api_key') || raw.includes('Invalid API Key')) {
+      title = '❌ Invalid Groq API Key';
+      body  = 'Paste a valid key from <a href="https://console.groq.com" target="_blank" style="color:var(--accent)">console.groq.com</a> into the header field above.';
+      type  = 'error';
+    } else if (raw.includes('JAVA_GATEWAY_EXITED') || raw.includes('java_gateway') || raw.includes('Java gateway')) {
+      title = '☕ Java (JDK) Not Found';
+      body  = `PySpark needs Java JDK 8, 11 or 17. Since you're running with WSL2+Hadoop:<br><br>
+<strong>Fix in WSL2 terminal:</strong><br>
+<code style="display:block;background:rgba(0,0,0,.3);padding:.35rem .6rem;border-radius:4px;margin:.25rem 0">sudo apt install openjdk-17-jdk -y
+echo 'export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64' >> ~/.bashrc
+source ~/.bashrc</code>
+<strong>Then add to your <code>.env</code>:</strong><br>
+<code style="display:block;background:rgba(0,0,0,.3);padding:.35rem .6rem;border-radius:4px;margin:.25rem 0">JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64</code>
+Restart Flask from WSL2: <code>python app.py</code>`;
+      type  = 'warn';
+    } else if (raw.includes('timed out')) {
+      title = '⏱️ Spark Timed Out';
+      body  = 'First run takes 60–90 s for JVM startup. Try again — subsequent queries are faster.';
+      type  = 'warn';
+    } else {
+      title = '❌ Spark Error';
+      body  = `<pre style="white-space:pre-wrap;font-size:.65rem;color:var(--muted);margin-top:.5rem;max-height:200px;overflow:auto">${esc(raw)}</pre>`;
+      type  = 'error';
+    }
+    document.getElementById('sparkJavaBanner').innerHTML =
+      `<div class="alert alert-${type}" style="flex-direction:column;align-items:flex-start;gap:.35rem">
+        <strong>${title}</strong>
+        <div style="font-size:.78rem;line-height:1.65">${body}</div>
+       </div>`;
+    toast(title, type);
+    return;
+  }
+  document.getElementById('sparkJavaBanner').innerHTML = '';
+  document.getElementById('sparkResults').classList.remove('hidden');
+  document.getElementById('sparkSQL').textContent = d.sql;
+  document.getElementById('sparkCount').textContent = `${d.row_count} rows`;
+  renderTable('sparkRH', 'sparkRB', d.columns, d.rows);
+  const sparkExpEl = document.getElementById('sparkExp');
+  if (sparkExpEl) {
+    sparkExpEl.innerHTML =
+      `<div style="position:relative">
+        <button onclick="copyText(this)" data-text="${esc(d.explanation)}"
+          style="position:absolute;top:0;right:0;background:var(--panel);border:1px solid var(--border);
+                 border-radius:5px;padding:.2rem .55rem;font-size:.65rem;color:var(--muted);cursor:pointer">
+          📋 Copy
+        </button>
+        <div style="padding-right:3rem">${renderMd(d.explanation)}</div>
+       </div>`;
+  }
+  toast('Spark job complete!', 'success');
+}
+
+// NL → SQL page  (completely self-contained, own DB state)
+let _nlDbType = 'sqlite', _nlMode = 'nl';
+
+function nlSetDb(t) {
+  _nlDbType = t;
+  document.getElementById('nlBtnSqlite').classList.toggle('active', t==='sqlite');
+  document.getElementById('nlBtnMysql').classList.toggle('active', t==='mysql');
+  document.getElementById('nlSqliteCfg').classList.toggle('hidden', t!=='sqlite');
+  document.getElementById('nlMysqlCfg').classList.toggle('hidden', t!=='mysql');
+  document.getElementById('nlResults').classList.add('hidden');
+}
+
+function nlSetMode(m) {
+  _nlMode = m;
+  document.getElementById('nlModeNl').classList.toggle('active', m==='nl');
+  document.getElementById('nlModeAgent').classList.toggle('active', m==='agent');
+  document.getElementById('nlPanelNl').classList.toggle('hidden', m!=='nl');
+  document.getElementById('nlPanelAgent').classList.toggle('hidden', m!=='agent');
+  document.getElementById('nlResults').classList.add('hidden');
+}
+
+function nlGetPayload() {
+  if (_nlDbType === 'sqlite')
+    return { db_type:'sqlite', db_file: document.getElementById('nlDbFile').value };
+  return {
+    db_type:'mysql',
+    host:     document.getElementById('nlMysqlHost').value.trim(),
+    port:     parseInt(document.getElementById('nlMysqlPort').value) || 3306,
+    user:     document.getElementById('nlMysqlUser').value.trim(),
+    password: document.getElementById('nlMysqlPass').value,
+    database: document.getElementById('nlMysqlDb').value.trim(),
+  };
+}
+
+function nlValidate(p) {
+  if (p.db_type==='sqlite' && !p.db_file) { toast('Select a SQLite database', 'error'); return false; }
+  if (p.db_type==='mysql'  && !p.database){ toast('Enter MySQL database name', 'error'); return false; }
+  return true;
+}
+
+async function nlLoadSchema() {
+  const p = nlGetPayload();
+  if (!nlValidate(p)) return;
+  const msg = document.getElementById('nlConnMsg');
+  msg.classList.remove('hidden');
+  msg.innerHTML = '<div class="alert alert-info"><div class="loader"></div>&nbsp;Connecting...</div>';
+  const d = await fetchJSON('/api/sql/schema', p);
+  if (d.error) { msg.innerHTML = `<div class="alert alert-error">❌ ${esc(d.error)}</div>`; return; }
+  msg.innerHTML = `<div class="alert alert-success">✅ Connected — ${d.tables.length} table(s): ${d.tables.map(t=>`<strong>${esc(t)}</strong>`).join(', ')}</div>`;
+  toast(`Schema loaded: ${d.tables.length} tables`, 'success');
+}
+
+async function runNlSql() {
+  const query = document.getElementById('nlQuery').value.trim();
+  if (!KEY()) { toast('Enter Groq API key', 'error'); return; }
+  if (!query)  { toast('Enter a query', 'error'); return; }
+  const p = nlGetPayload();
+  if (!nlValidate(p)) return;
+  setBusy('nlTxt', 'nlLoad', true, '🤖 Generate & Run SQL');
+  const d = await fetchJSON('/api/sql/query', { ...p, query, api_key: KEY(), mode: 'direct' }, null, 90000);
+  setBusy('nlTxt', 'nlLoad', false, '🤖 Generate & Run SQL');
+  if (d.error) {
+    const raw = d.error || '';
+    let _msg;
+    if (raw.includes('401') || raw.includes('invalid_api_key')) {
+      _msg = '❌ Invalid Groq API Key — get yours at console.groq.com';
+    } else if (raw.includes('2003') || raw.includes('Connection refused') || raw.includes("Can't connect to MySQL")) {
+      _msg = '❌ MySQL is not running.\n\nWindows: Open Services → find MySQL → Start\nWSL2: sudo service mysql start\nMac: brew services start mysql\n\nThen click Run again.';
+    } else if (raw.includes('Access denied') || raw.includes('1045')) {
+      _msg = '❌ MySQL access denied — check username and password in the connection panel.';
+    } else if (raw.includes('Unknown database') || raw.includes('1049')) {
+      _msg = '❌ MySQL database not found — check the database name.';
+    } else {
+      _msg = raw;
+    }
+    toast(_msg, 'error');
+    return;
+  }
+  document.getElementById('nlResults').classList.remove('hidden');
+  document.getElementById('nlSqlCard').classList.remove('hidden');
+  document.getElementById('nlGenerated').textContent = d.sql;
+  document.getElementById('nlCount').textContent = `${d.row_count} rows`;
+  renderTable('nlRH', 'nlRB', d.columns, d.rows);
+  document.getElementById('nlExpCard').classList.remove('hidden');
+  document.getElementById('nlAgentCard').classList.add('hidden');
+  const nlExpEl = document.getElementById('nlExp');
+  if (nlExpEl) {
+    nlExpEl.innerHTML =
+      `<div style="position:relative">
+        <button onclick="copyText(this)" data-text="${esc(d.explanation)}"
+          style="position:absolute;top:0;right:0;background:var(--panel);border:1px solid var(--border);
+                 border-radius:5px;padding:.2rem .55rem;font-size:.65rem;color:var(--muted);cursor:pointer">
+          📋 Copy
+        </button>
+        <div style="padding-right:3rem">${renderMd(d.explanation)}</div>
+       </div>`;
+  }
+  toast('Query complete!', 'success');
+}
+
+async function runNlAgent() {
+  const query = document.getElementById('nlAgentQuery').value.trim();
+  if (!KEY()) { toast('Enter Groq API key', 'error'); return; }
+  if (!query)  { toast('Enter a query', 'error'); return; }
+  const p = nlGetPayload();
+  if (!nlValidate(p)) return;
+  setBusy('nlAgentTxt', 'nlAgentLoad', true, '🦜 Run SQL Agent');
+  const d = await fetchJSON('/api/sql/query', { ...p, query, api_key: KEY(), mode: 'agent' }, null, 120000);
+  setBusy('nlAgentTxt', 'nlAgentLoad', false, '🦜 Run SQL Agent');
+  if (d.error) { toast(d.error, 'error'); return; }
+  document.getElementById('nlResults').classList.remove('hidden');
+  document.getElementById('nlSqlCard').classList.add('hidden');
+  document.getElementById('nlExpCard').classList.add('hidden');
+  document.getElementById('nlRH').innerHTML = '';
+  document.getElementById('nlRB').innerHTML = '';
+  document.getElementById('nlCount').textContent = '';
+  document.getElementById('nlAgentCard').classList.remove('hidden');
+  document.getElementById('nlAgentResp').textContent = d.response;
+  toast('Agent complete!', 'success');
+}
+
+// Raw SQL page  (completely self-contained, own DB state)
+let _rawDbType = 'sqlite';
+
+function rawSetDb(t) {
+  _rawDbType = t;
+  document.getElementById('rawBtnSqlite').classList.toggle('active', t==='sqlite');
+  document.getElementById('rawBtnMysql').classList.toggle('active', t==='mysql');
+  document.getElementById('rawSqliteCfg').classList.toggle('hidden', t!=='sqlite');
+  document.getElementById('rawMysqlCfg').classList.toggle('hidden', t!=='mysql');
+  document.getElementById('rawResults').classList.add('hidden');
+}
+
+function rawGetPayload() {
+  if (_rawDbType === 'sqlite')
+    return { db_type:'sqlite', db_file: document.getElementById('rawDbFile').value };
+  return {
+    db_type:'mysql',
+    host:     document.getElementById('rawMysqlHost').value.trim(),
+    port:     parseInt(document.getElementById('rawMysqlPort').value) || 3306,
+    user:     document.getElementById('rawMysqlUser').value.trim(),
+    password: document.getElementById('rawMysqlPass').value,
+    database: document.getElementById('rawMysqlDb').value.trim(),
+  };
+}
+
+async function runRawSql() {
+  const sql = document.getElementById('rawSql').value.trim();
+  if (!sql) { toast('Enter a SQL query', 'error'); return; }
+  const p = rawGetPayload();
+  if (p.db_type==='sqlite' && !p.db_file)  { toast('Select a SQLite database', 'error'); return; }
+  if (p.db_type==='mysql'  && !p.database) { toast('Enter MySQL database name', 'error'); return; }
+  setBusy('rawTxt', 'rawLoad', true, '▶ Execute SQL');
+  const d = await fetchJSON('/api/sql/raw', { ...p, sql });
+  setBusy('rawTxt', 'rawLoad', false, '▶ Execute SQL');
+  if (d.error) {
+    const _msg = d.error.includes('401') || d.error.includes('invalid_api_key')
+      ? '❌ Invalid Groq API Key — get yours at console.groq.com'
+      : d.error;
+    toast(_msg, 'error');
+    return;
+  }
+  document.getElementById('rawResults').classList.remove('hidden');
+  document.getElementById('rawCount').textContent = `${d.row_count} rows`;
+  renderTable('rawRH', 'rawRB', d.columns, d.rows);
+  toast(`${d.row_count} rows returned`, 'success');
+}
+
+// Schema Explorer  (self-contained)
+let _schDbType = 'sqlite';
+
+function schSetDb(t) {
+  _schDbType = t;
+  document.getElementById('schBtnSqlite').classList.toggle('active', t==='sqlite');
+  document.getElementById('schBtnMysql').classList.toggle('active', t==='mysql');
+  document.getElementById('schSqliteCfg').classList.toggle('hidden', t!=='sqlite');
+  document.getElementById('schMysqlCfg').classList.toggle('hidden', t!=='mysql');
+  document.getElementById('schResult').classList.add('hidden');
+}
+
+function schGetPayload() {
+  if (_schDbType === 'sqlite')
+    return { db_type:'sqlite', db_file: document.getElementById('schDbFile').value };
+  return {
+    db_type:'mysql',
+    host:     document.getElementById('schMysqlHost').value.trim(),
+    port:     parseInt(document.getElementById('schMysqlPort').value) || 3306,
+    user:     document.getElementById('schMysqlUser').value.trim(),
+    password: document.getElementById('schMysqlPass').value,
+    database: document.getElementById('schMysqlDb').value.trim(),
+  };
+}
+
+// ── ER diagram state ──
+let _erScale = 1;
+let _erData  = null;
+
+function erZoom(factor) {
+  _erScale *= factor;
+  if (_erData) renderErDiagram(_erData);
+}
+function erReset() {
+  _erScale = 1;
+  if (_erData) renderErDiagram(_erData);
+}
+
+async function runSchema() {
+  const p = schGetPayload();
+  if (p.db_type==='sqlite' && !p.db_file)  { toast('Select a SQLite database', 'error'); return; }
+  if (p.db_type==='mysql'  && !p.database) { toast('Enter MySQL database name', 'error'); return; }
+  setBusy('schTxt', 'schLoad', true, '🔍 Generate ER Diagram');
+  const d = await fetchJSON('/api/sql/schema', p);
+  setBusy('schTxt', 'schLoad', false, '🔍 Generate ER Diagram');
+  if (d.error) { toast(d.error, 'error'); return; }
+  _erData = d;
+  _erScale = 1;
+  document.getElementById('schResult').classList.remove('hidden');
+  document.getElementById('schTableCount').textContent = `${d.tables.length} tables`;
+  renderErDiagram(d);
+  renderTableList(d);
+  toast(`ER diagram: ${d.tables.length} tables`, 'success');
+}
+
+
+function renderMd(text) {
+  if (!text) return '';
+  let t = text;
+
+  // Code blocks (``` ... ```)
+  t = t.replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, code) =>
+    `<pre style="background:var(--code);border:1px solid var(--border);border-radius:7px;padding:.7rem .9rem;overflow-x:auto;font-size:.72rem;margin:.5rem 0;color:#a5f3fc"><code>${escHtml(code.trim())}</code></pre>`
+  );
+
+  // Inline code
+  t = t.replace(/`([^`]+)`/g, '<code style="background:var(--code);padding:.1rem .35rem;border-radius:4px;font-size:.82em;color:#a5f3fc">$1</code>');
+
+  // Headers
+  t = t.replace(/^### (.+)$/gm, '<h4 style="color:var(--accent);margin:.65rem 0 .25rem;font-size:.85rem">$1</h4>');
+  t = t.replace(/^## (.+)$/gm,  '<h3 style="color:var(--accent);margin:.75rem 0 .3rem;font-size:.92rem">$1</h3>');
+  t = t.replace(/^# (.+)$/gm,   '<h2 style="color:var(--accent);margin:.8rem 0 .35rem;font-size:1rem">$1</h2>');
+
+  // Bold & italic
+  t = t.replace(/\*\*([^*]+)\*\*/g, '<strong style="color:var(--text)">$1</strong>');
+  t = t.replace(/\*([^*]+)\*/g,     '<em style="color:var(--muted)">$1</em>');
+
+  // Tables — | col | col | rows
+  t = t.replace(/((?:\|.+\|\n)+)/g, (match) => {
+    const rows = match.trim().split('\n').filter(r => r.trim());
+    const isSep = r => /^\|[-| :]+\|$/.test(r.trim());
+    let html = '<div style="overflow-x:auto;margin:.5rem 0"><table style="width:100%;border-collapse:collapse;font-size:.74rem;font-family:\'JetBrains Mono\',monospace">';
+    let inHead = true;
+    rows.forEach(row => {
+      if (isSep(row)) { inHead = false; return; }
+      const cells = row.split('|').filter((_, i, a) => i > 0 && i < a.length - 1);
+      const tag   = inHead ? 'th' : 'td';
+      const style = inHead
+        ? 'background:var(--code);color:var(--accent);padding:.3rem .55rem;border:1px solid var(--border);text-align:left;font-size:.72rem'
+        : 'padding:.28rem .55rem;border:1px solid var(--border);color:var(--text)';
+      html += '<tr>' + cells.map(c => `<${tag} style="${style}">${escHtml(c.trim())}</${tag}>`).join('') + '</tr>';
+    });
+    return html + '</table></div>';
+  });
+
+  // Unordered lists
+  t = t.replace(/^[ \t]*[-*+] (.+)$/gm, '<li style="margin:.18rem 0;padding-left:.2rem">$1</li>');
+  t = t.replace(/(<li[\s\S]+?<\/li>\n?)+/g, m =>
+    `<ul style="margin:.4rem 0 .4rem 1.2rem;padding:0;list-style:disc;color:var(--text)">${m}</ul>`);
+
+  // Ordered lists
+  t = t.replace(/^[ \t]*\d+\. (.+)$/gm, '<li style="margin:.18rem 0;padding-left:.2rem">$1</li>');
+
+  // Tree-style ASCII art (preserve spacing)
+  t = t.replace(/((?:[ \t]*[├└│─].*\n)+)/g, m =>
+    `<pre style="background:var(--code);border:1px solid var(--border);border-radius:7px;padding:.6rem .85rem;font-size:.71rem;color:#e2e8f0;margin:.4rem 0;line-height:1.6">${escHtml(m.trimEnd())}</pre>`
+  );
+
+  // Horizontal rule
+  t = t.replace(/^---+$/gm, '<hr style="border:none;border-top:1px solid var(--border);margin:.65rem 0">');
+
+  // Paragraphs — blank line separation
+  t = t.replace(/\n\n+/g, '</p><p style="margin:.4rem 0">');
+  t = '<p style="margin:.4rem 0">' + t + '</p>';
+
+  // Line breaks within paragraphs
+  t = t.replace(/([^>])\n([^<])/g, '$1<br>$2');
+
+  return t;
+}
+
+function escHtml(s) {
+  return String(s)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+
+function renderErDiagram(d) {
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+  const tables = d.tables || [];
+  const schema = d.schema || {};
+  const rowCounts = d.row_counts || {};
+
+  const COL_H   = 22 * _erScale;
+  const HDR_H   = 36 * _erScale;
+  const TBL_W   = 210 * _erScale;
+  const PAD     = 48 * _erScale;
+  const COLS    = Math.max(1, Math.min(4, Math.ceil(Math.sqrt(tables.length))));
+  const fontSize = Math.max(9, 11 * _erScale);
+  const hdrSize  = Math.max(10, 12 * _erScale);
+  const dotR     = Math.max(3, 4 * _erScale);
+
+  // ── Layout: grid positions ──
+  const positions = {};
+  tables.forEach((t, i) => {
+    const cols_i = d.schema[t] || [];
+    const h = HDR_H + cols_i.length * COL_H + 8 * _erScale;
+    const col = i % COLS;
+    const row = Math.floor(i / COLS);
+    const x = PAD + col * (TBL_W + PAD * 1.5);
+    const y = PAD + row * (h + PAD);
+    positions[t] = { x, y, w: TBL_W, h };
+  });
+
+  // ── Infer FK relationships by column name matching ──
+  const allColNames = {};
+  tables.forEach(t => {
+    (schema[t] || []).forEach(c => {
+      const key = c.name.toLowerCase();
+      if (!allColNames[key]) allColNames[key] = [];
+      allColNames[key].push(t);
+    });
+  });
+
+  const relationships = [];
+  tables.forEach(t => {
+    (schema[t] || []).forEach(c => {
+      const cn = c.name.toLowerCase();
+      // Pattern: other_table_id or tablename_id
+      const match = cn.match(/^(.+?)_id$/);
+      if (match) {
+        const refTable = tables.find(t2 =>
+          t2.toLowerCase() === match[1] ||
+          t2.toLowerCase() === match[1] + 's' ||
+          t2.toLowerCase() === match[1] + 'es'
+        );
+        if (refTable && refTable !== t) {
+          relationships.push({ from: t, to: refTable, col: c.name });
+        }
+      }
+    });
+  });
+
+  // ── Compute SVG dimensions ──
+  let maxX = 0, maxY = 0;
+  tables.forEach(t => {
+    const p = positions[t];
+    maxX = Math.max(maxX, p.x + p.w);
+    maxY = Math.max(maxY, p.y + p.h);
+  });
+  const svgW = maxX + PAD;
+  const svgH = maxY + PAD;
+
+  const svg = document.getElementById('erSvg');
+  svg.setAttribute('width', svgW);
+  svg.setAttribute('height', svgH);
+  svg.setAttribute('viewBox', `0 0 ${svgW} ${svgH}`);
+  svg.innerHTML = '';
+
+  // ── Defs: arrow marker, drop-shadow ──
+  const defs = document.createElementNS(SVG_NS, 'defs');
+  defs.innerHTML = `
+    <!-- Standard filled arrow (→) for FK relationships -->
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,10 L12,5 z" fill="#a78bfa" opacity="0.9"/>
+    </marker>
+    <!-- Open circle (○) for the "many" end -->
+    <marker id="circle" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto" markerUnits="strokeWidth">
+      <circle cx="4" cy="4" r="3" fill="none" stroke="#a78bfa" stroke-width="1.5" opacity="0.9"/>
+    </marker>
+    <!-- Glow filter for relationship lines -->
+    <filter id="lineGlow">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000" flood-opacity="0.3"/>
+    </filter>`;
+  svg.appendChild(defs);
+
+  // ── Draw relationship lines first (behind tables) ──
+  relationships.forEach(rel => {
+    const from = positions[rel.from];
+    const to   = positions[rel.to];
+    if (!from || !to) return;
+
+    const x1 = from.x + from.w;
+    const y1 = from.y + HDR_H / 2;
+    const x2 = to.x;
+    const y2 = to.y + HDR_H / 2;
+
+    const path = document.createElementNS(SVG_NS, 'path');
+    // Smart routing: if tables on same row use curved path, else route around
+    const sameRow = Math.abs(y1 - y2) < HDR_H;
+    let pathD;
+    if (sameRow) {
+      // Horizontal S-curve
+      const cx1 = x1 + Math.abs(x2 - x1) * 0.5;
+      const cx2 = x2 - Math.abs(x2 - x1) * 0.5;
+      pathD = `M${x1},${y1} C${cx1},${y1} ${cx2},${y2} ${x2},${y2}`;
+    } else {
+      // Elbow route: go right, then down, then to target
+      const midX = x1 + (x2 - x1) * 0.5;
+      pathD = `M${x1},${y1} C${midX},${y1} ${midX},${y2} ${x2},${y2}`;
+    }
+    path.setAttribute('d', pathD);
+    path.setAttribute('stroke', '#a78bfa');
+    path.setAttribute('stroke-width', Math.max(2, 2.5 * _erScale));
+    path.setAttribute('stroke-dasharray', 'none');
+    path.setAttribute('fill', 'none');
+    path.setAttribute('opacity', '0.85');
+    path.setAttribute('marker-end', 'url(#arrow)');
+    path.setAttribute('marker-start', 'url(#circle)');
+    svg.appendChild(path);
+
+    // Relationship label background pill
+    const lx = (x1 + x2) / 2;
+    const ly = (y1 + y2) / 2;
+    const lblPad = 4 * _erScale;
+    const lblText = rel.col;
+    const lblW = lblText.length * 5.5 * _erScale + lblPad * 2;
+    const lblH = 14 * _erScale;
+
+    const lblBg = document.createElementNS(SVG_NS, 'rect');
+    lblBg.setAttribute('x', lx - lblW / 2);
+    lblBg.setAttribute('y', ly - lblH / 2 - 2 * _erScale);
+    lblBg.setAttribute('width', lblW);
+    lblBg.setAttribute('height', lblH);
+    lblBg.setAttribute('rx', 4 * _erScale);
+    lblBg.setAttribute('fill', '#1e1b4b');
+    lblBg.setAttribute('opacity', '0.85');
+    svg.appendChild(lblBg);
+
+    const lbl = document.createElementNS(SVG_NS, 'text');
+    lbl.setAttribute('x', lx);
+    lbl.setAttribute('y', ly + 3 * _erScale);
+    lbl.setAttribute('text-anchor', 'middle');
+    lbl.setAttribute('font-size', Math.max(7, 9 * _erScale));
+    lbl.setAttribute('font-family', 'JetBrains Mono, monospace');
+    lbl.setAttribute('fill', '#c4b5fd');
+    lbl.setAttribute('font-weight', '600');
+    lbl.textContent = rel.col;
+    svg.appendChild(lbl);
+  });
+
+  // ── Draw table boxes ──
+  const TABLE_COLORS = ['#00d4ff','#10b981','#f97316','#7c3aed','#06b6d4','#f59e0b'];
+
+  tables.forEach((t, ti) => {
+    const p   = positions[t];
+    const cols = schema[t] || [];
+    const color = TABLE_COLORS[ti % TABLE_COLORS.length];
+
+    // Shadow rect
+    const shadow = document.createElementNS(SVG_NS, 'rect');
+    shadow.setAttribute('x', p.x + 2);
+    shadow.setAttribute('y', p.y + 2);
+    shadow.setAttribute('width', p.w);
+    shadow.setAttribute('height', p.h);
+    shadow.setAttribute('rx', 8 * _erScale);
+    shadow.setAttribute('fill', '#000');
+    shadow.setAttribute('opacity', '0.25');
+    svg.appendChild(shadow);
+
+    // Main rect
+    const rect = document.createElementNS(SVG_NS, 'rect');
+    rect.setAttribute('x', p.x);
+    rect.setAttribute('y', p.y);
+    rect.setAttribute('width', p.w);
+    rect.setAttribute('height', p.h);
+    rect.setAttribute('rx', 8 * _erScale);
+    rect.setAttribute('fill', '#111318');
+    rect.setAttribute('stroke', color);
+    rect.setAttribute('stroke-width', Math.max(1, 1.5 * _erScale));
+    svg.appendChild(rect);
+
+    // Header background
+    const hdr = document.createElementNS(SVG_NS, 'rect');
+    hdr.setAttribute('x', p.x);
+    hdr.setAttribute('y', p.y);
+    hdr.setAttribute('width', p.w);
+    hdr.setAttribute('height', HDR_H);
+    hdr.setAttribute('rx', 8 * _erScale);
+    hdr.setAttribute('fill', color);
+    hdr.setAttribute('opacity', '0.15');
+    svg.appendChild(hdr);
+
+    // Colour bar at top
+    const bar = document.createElementNS(SVG_NS, 'rect');
+    bar.setAttribute('x', p.x);
+    bar.setAttribute('y', p.y);
+    bar.setAttribute('width', p.w);
+    bar.setAttribute('height', Math.max(3, 3.5 * _erScale));
+    bar.setAttribute('rx', 8 * _erScale);
+    bar.setAttribute('fill', color);
+    svg.appendChild(bar);
+
+    // Table name
+    const tName = document.createElementNS(SVG_NS, 'text');
+    tName.setAttribute('x', p.x + 12 * _erScale);
+    tName.setAttribute('y', p.y + HDR_H * 0.65);
+    tName.setAttribute('font-size', hdrSize);
+    tName.setAttribute('font-family', 'Syne, sans-serif');
+    tName.setAttribute('font-weight', '700');
+    tName.setAttribute('fill', color);
+    tName.textContent = t;
+    svg.appendChild(tName);
+
+    // Row count badge
+    if (rowCounts[t] !== undefined) {
+      const badge = document.createElementNS(SVG_NS, 'text');
+      badge.setAttribute('x', p.x + p.w - 8 * _erScale);
+      badge.setAttribute('y', p.y + HDR_H * 0.65);
+      badge.setAttribute('text-anchor', 'end');
+      badge.setAttribute('font-size', Math.max(7, 9 * _erScale));
+      badge.setAttribute('font-family', 'JetBrains Mono, monospace');
+      badge.setAttribute('fill', '#64748b');
+      badge.textContent = rowCounts[t].toLocaleString() + ' rows';
+      svg.appendChild(badge);
+    }
+
+    // Divider line
+    const div = document.createElementNS(SVG_NS, 'line');
+    div.setAttribute('x1', p.x);        div.setAttribute('y1', p.y + HDR_H);
+    div.setAttribute('x2', p.x + p.w);  div.setAttribute('y2', p.y + HDR_H);
+    div.setAttribute('stroke', color);
+    div.setAttribute('stroke-width', Math.max(0.5, 0.7 * _erScale));
+    div.setAttribute('opacity', '0.35');
+    svg.appendChild(div);
+
+    // Column rows
+    cols.forEach((col, ci) => {
+      const cy = p.y + HDR_H + ci * COL_H + COL_H * 0.72;
+      const rowY = p.y + HDR_H + ci * COL_H;
+
+      // Hover stripe (alternating rows)
+      if (ci % 2 === 0) {
+        const stripe = document.createElementNS(SVG_NS, 'rect');
+        stripe.setAttribute('x', p.x + 1);
+        stripe.setAttribute('y', rowY);
+        stripe.setAttribute('width', p.w - 2);
+        stripe.setAttribute('height', COL_H);
+        stripe.setAttribute('fill', '#ffffff');
+        stripe.setAttribute('opacity', '0.02');
+        svg.appendChild(stripe);
+      }
+
+      // PK indicator dot
+      const isPK = col.name.toLowerCase() === 'id' ||
+                   col.name.toLowerCase() === t.toLowerCase() + '_id' ||
+                   col.name.toLowerCase().endsWith('_pk');
+      const isFK = col.name.toLowerCase().endsWith('_id') && !isPK;
+
+      const dotX = p.x + 10 * _erScale;
+      const dotY = rowY + COL_H / 2;
+      const dot = document.createElementNS(SVG_NS, 'circle');
+      dot.setAttribute('cx', dotX);
+      dot.setAttribute('cy', dotY);
+      dot.setAttribute('r', dotR * 0.7);
+      dot.setAttribute('fill', isPK ? '#f59e0b' : isFK ? '#7c3aed' : '#1e2130');
+      dot.setAttribute('stroke', isPK ? '#f59e0b' : isFK ? '#7c3aed' : '#2d3349');
+      dot.setAttribute('stroke-width', Math.max(0.5, 0.8 * _erScale));
+      svg.appendChild(dot);
+
+      // Column name
+      const cName = document.createElementNS(SVG_NS, 'text');
+      cName.setAttribute('x', p.x + 22 * _erScale);
+      cName.setAttribute('y', cy);
+      cName.setAttribute('font-size', fontSize);
+      cName.setAttribute('font-family', 'JetBrains Mono, monospace');
+      cName.setAttribute('fill', isPK ? '#f59e0b' : isFK ? '#a78bfa' : '#e2e8f0');
+      cName.textContent = col.name;
+      svg.appendChild(cName);
+
+      // Data type (right-aligned)
+      const cType = document.createElementNS(SVG_NS, 'text');
+      cType.setAttribute('x', p.x + p.w - 8 * _erScale);
+      cType.setAttribute('y', cy);
+      cType.setAttribute('text-anchor', 'end');
+      cType.setAttribute('font-size', Math.max(7, 9 * _erScale));
+      cType.setAttribute('font-family', 'JetBrains Mono, monospace');
+      cType.setAttribute('fill', '#10b981');
+      cType.textContent = String(col.type).split('(')[0].toUpperCase();
+      svg.appendChild(cType);
+    });
+  });
+
+  // ── Legend ──
+  const lgX = PAD / 2;
+  const lgY = svgH - PAD * 0.75;
+  const legItems = [
+    { color: '#f59e0b', label: '● Primary Key' },
+    { color: '#a78bfa', label: '● Foreign Key' },
+    { color: '#7c3aed', label: '- - Relationship' },
+  ];
+  legItems.forEach((item, i) => {
+    const lt = document.createElementNS(SVG_NS, 'text');
+    lt.setAttribute('x', lgX + i * 130 * _erScale);
+    lt.setAttribute('y', lgY);
+    lt.setAttribute('font-size', Math.max(8, 9.5 * _erScale));
+    lt.setAttribute('font-family', 'JetBrains Mono, monospace');
+    lt.setAttribute('fill', item.color);
+    lt.textContent = item.label;
+    svg.appendChild(lt);
+  });
+}
+
+function renderTableList(d) {
+  const list = document.getElementById('schTableList');
+  list.innerHTML = d.tables.map(t => {
+    const cols = d.schema[t] || [];
+    const rows = d.row_counts?.[t];
+    return `
+      <div style="background:var(--code);border:1px solid var(--border);border-radius:8px;padding:.7rem 1rem">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.45rem">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:.78rem;font-weight:700;color:var(--sql)">📋 ${esc(t)}</span>
+          ${rows !== undefined ? `<span class="tag tag-blue">${rows.toLocaleString()} rows</span>` : ''}
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:.3rem">
+          ${cols.map(c => {
+            const isPK = c.name.toLowerCase()==='id'||c.name.toLowerCase().endsWith('_pk');
+            const isFK = c.name.toLowerCase().endsWith('_id') && !isPK;
+            const badge = isPK ? 'PK' : isFK ? 'FK' : '';
+            const color = isPK ? 'var(--warn)' : isFK ? '#a78bfa' : 'var(--accent3)';
+            return `<span style="font-family:'JetBrains Mono',monospace;font-size:.66rem;background:var(--panel);border:1px solid var(--border);border-radius:4px;padding:.08rem .4rem;color:${color}">
+              ${esc(c.name)}<span style="color:var(--muted);margin-left:.3rem">${String(c.type).split('(')[0]}</span>${badge?`<span style="color:${color};margin-left:.25rem;font-size:.58rem">${badge}</span>`:''}
+            </span>`;
+          }).join('')}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ══ AI Chat ══
+function clearChat() {
+  document.getElementById('chatMsgs').innerHTML =
+    '<div class="msg bot"><div class="msg-av">🤖</div><div><div class="msg-body">Chat cleared. How can I help?</div></div></div>';
+}
+
+async function sendChat(prefillText) {
+  const input = document.getElementById('chatInput');
+  const query = (prefillText || input.value || '').trim();
+  if (!query) return;
+  if (!KEY()) { toast('Enter Groq API key in the header', 'error'); return; }
+  const msgs = document.getElementById('chatMsgs');
+  if (!prefillText) input.value = '';
+  const userMsgId = 'umsg-' + Date.now();
+  msgs.innerHTML += `<div class="msg user" id="${userMsgId}">
+    <div class="msg-av">👤</div>
+    <div style="flex:1">
+      <div class="msg-body" id="${userMsgId}-body" data-raw="${esc(query)}">${esc(query)}</div>
+      <div style="display:flex;align-items:center;gap:.5rem;margin-top:.3rem;justify-content:flex-end">
+        <span class="msg-time">${now()}</span>
+        <button onclick="editChatMsg('${userMsgId}')"
+          style="background:none;border:1px solid var(--border);border-radius:4px;
+                 padding:.1rem .4rem;font-size:.62rem;color:var(--muted);cursor:pointer">
+          ✏️ Edit
+        </button>
+      </div>
+    </div>
+  </div>`;
+  const tid = 'typ' + Date.now();
+  msgs.innerHTML += `<div class="msg bot" id="${tid}"><div class="msg-av">🤖</div><div><div class="msg-body"><div class="typing"><span></span><span></span><span></span></div><div style="font-size:.68rem;color:var(--muted);margin-top:.3rem;font-family:'JetBrains Mono',monospace">Thinking… (up to 30 s)</div></div></div></div>`;
+  msgs.scrollTop = msgs.scrollHeight;
+  setBusy('chatTxt', 'chatLoad', true, 'Send');
+  const d = await fetchJSON('/api/chat', { query, api_key: KEY() }, null, 60000);
+  document.getElementById(tid)?.remove();
+    const rawResp = d.error ? `❌ ${d.error}` : d.response;
+  msgs.innerHTML += `<div class="msg bot"><div class="msg-av">🤖</div><div>
+    <div class="msg-body">${renderMd(rawResp)}</div>
+    <div style="display:flex;align-items:center;gap:.5rem;margin-top:.3rem">
+      <span class="msg-time">${now()}</span>
+      <button onclick="copyText(this)" data-text="${esc(rawResp)}"
+        style="background:none;border:1px solid var(--border);border-radius:4px;padding:.1rem .4rem;
+               font-size:.62rem;color:var(--muted);cursor:pointer">📋 Copy</button>
+    </div>
+  </div></div>`;
+  setBusy('chatTxt', 'chatLoad', false, 'Send');
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+// ══ PDF Q&A ══
+async function askPdf() {
+  const query = document.getElementById('pdfQuery').value.trim();
+  const pdfFn = document.getElementById('pdfQaSel')?.value || '';
+  if (!KEY())  { toast('Enter Groq API key', 'error'); return; }
+  if (!query)  { toast('Enter a question', 'error'); return; }
+  if (!pdfFn)  { toast('Select a PDF first', 'error'); return; }
+  const sec = document.getElementById('pdfResult');
+  const ans = document.getElementById('pdfAnswer');
+  sec.classList.remove('hidden');
+  ans.textContent = 'Searching PDF… (first query may take 10–20 s)';
+  setBusy('pdfTxt', 'pdfLoad', true, '🔍 Search PDF');
+  const d = await fetchJSON('/api/pdf/ask', { query, api_key: KEY(), pdf_filename: pdfFn }, null, 60000);
+  setBusy('pdfTxt', 'pdfLoad', false, '🔍 Search PDF');
+  ans.textContent = d.error ? `Error: ${d.error}` : d.response;
+  if (d.error) toast(d.error, 'error');
+}
+
+// ══ Settings ══
+async function testConn() {
+  const el = document.getElementById('connStatus');
+  el.classList.remove('hidden');
+  el.innerHTML = '<div class="alert alert-info"><div class="loader"></div>&nbsp;Testing...</div>';
+  try {
+    const r = await apiFetch('/api/ping', {}, 8000);
+    if (r.ok) el.innerHTML = '<div class="alert alert-success">✅ Flask backend is online!</div>';
+    else el.innerHTML = `<div class="alert alert-error">❌ Backend returned ${r.status}</div>`;
+  } catch (e) {
+    el.innerHTML = `<div class="alert alert-error">❌ ${esc(e.message)}</div>`;
+  }
+}
+
+// ══ JSON Analytics ══
+async function loadJsonFiles() {
+  const d = await fetchJSON('/api/files');
+  if (d.error) return;
+  const jsonFiles = (d.files || []).filter(f => f.name.endsWith('.json'));
+  const opts = '<option value="">— select .json file —</option>' +
+    jsonFiles.map(f => `<option value="${esc(f.name)}" data-folder="${f.folder}">${esc(f.name)}</option>`).join('');
+  const el = document.getElementById('jsonFile');
+  if (el) el.innerHTML = opts;
+}
+
+async function jsonPreview() {
+  const sel = document.getElementById('jsonFile');
+  const fn  = sel?.value;
+  const fol = document.getElementById('jsonFolder')?.value || 'raw';
+  if (!fn) { toast('Select a JSON file first', 'error'); return; }
+  const d = await fetchJSON('/api/preview', { filename: fn, folder: fol });
+  if (d.error) { toast(d.error, 'error'); return; }
+  const sec = document.getElementById('jsonPreviewSection');
+  sec.classList.remove('hidden');
+  document.getElementById('jsonPreviewMeta').textContent = `${d.shape[0]} rows × ${d.shape[1]} fields`;
+  renderTable('jsonPreviewHead', 'jsonPreviewBody', d.columns, d.rows);
+  toast('Preview loaded', 'success');
+}
+
+async function jsonAnalyze() {
+  const sel = document.getElementById('jsonFile');
+  const fn  = sel?.value;
+  const fol = document.getElementById('jsonFolder')?.value || 'raw';
+  if (!fn) { toast('Select a JSON file first', 'error'); return; }
+  setBusy('jsonAnalyzeTxt', 'jsonAnalyzeLoad', true, '🔍 Deep Analyze');
+  const d = await fetchJSON('/api/json/analyze', { filename: fn, folder: fol });
+  setBusy('jsonAnalyzeTxt', 'jsonAnalyzeLoad', false, '🔍 Deep Analyze');
+  if (d.error) { toast(d.error, 'error'); return; }
+  document.getElementById('jsonAnalyzeResults').classList.remove('hidden');
+  document.getElementById('jsonStatCards').innerHTML = `
+    <div class="card" style="padding:.9rem">
+      <div class="stat-lbl">Records</div>
+      <div class="stat-val" style="font-size:1.4rem">${d.total_records.toLocaleString()}</div>
+    </div>
+    <div class="card" style="padding:.9rem">
+      <div class="stat-lbl">Fields</div>
+      <div class="stat-val" style="font-size:1.4rem">${d.total_fields}</div>
+    </div>
+    <div class="card" style="padding:.9rem">
+      <div class="stat-lbl">Nesting Depth</div>
+      <div class="stat-val" style="font-size:1.4rem">${d.nesting_depth}</div>
+    </div>`;
+  const total = d.total_records || 1;
+  document.getElementById('jsonSchemaBody').innerHTML =
+    d.columns.map(c => {
+      const nulls = d.null_counts[c] || 0;
+      const pct = ((nulls/total)*100).toFixed(1);
+      return `<tr>
+        <td style="font-family:'JetBrains Mono',monospace;font-size:.75rem">${esc(c)}</td>
+        <td><span class="tag tag-blue">${esc(d.dtypes[c]||'')}</span></td>
+        <td>${nulls}</td>
+        <td style="color:${nulls>0?'var(--warn)':'var(--accent3)'}">${pct}%</td>
+      </tr>`;
+    }).join('');
+  const distKeys = Object.keys(d.distributions||{});
+  if (distKeys.length) {
+    document.getElementById('jsonDistCard').classList.remove('hidden');
+    document.getElementById('jsonDistContent').innerHTML = distKeys.map(col => `
+      <div style="background:var(--code);border:1px solid var(--border);border-radius:8px;padding:.7rem .95rem;min-width:200px">
+        <div style="font-size:.7rem;font-weight:700;color:var(--sql);font-family:'JetBrains Mono',monospace;margin-bottom:.4rem">${esc(col)}</div>
+        ${Object.entries(d.distributions[col]).map(([k,v]) =>
+          `<div style="display:flex;justify-content:space-between;font-size:.68rem;font-family:'JetBrains Mono',monospace;padding:.1rem 0;color:var(--muted)">
+            <span style="color:var(--text)">${esc(String(k))}</span>
+            <span class="tag tag-blue">${v}</span>
+          </div>`).join('')}
+      </div>`).join('');
+  }
+  const numKeys = Object.keys(d.numeric_summary||{});
+  if (numKeys.length) {
+    document.getElementById('jsonNumCard').classList.remove('hidden');
+    document.getElementById('jsonNumBody').innerHTML = numKeys.map(c => {
+      const s = d.numeric_summary[c];
+      return `<tr>
+        <td style="font-family:'JetBrains Mono',monospace;font-size:.75rem">${esc(c)}</td>
+        <td>${s.min}</td><td>${s.max}</td><td>${s.mean}</td>
+        <td style="color:${s.nulls>0?'var(--warn)':'var(--accent3)'}">${s.nulls}</td>
+      </tr>`;
+    }).join('');
+  }
+  if (d.sample && d.sample.length && d.columns.length)
+    renderTable('jsonSampleHead', 'jsonSampleBody',
+      d.columns, d.sample.map(row => d.columns.map(c => row[c]??'')));
+  toast(`Analyzed ${d.total_records.toLocaleString()} records`, 'success');
+}
+
+async function runJsonQuery() {
+  const sel   = document.getElementById('jsonFile');
+  const fn    = sel?.value;
+  const fol   = document.getElementById('jsonFolder')?.value || 'raw';
+  const query = document.getElementById('jsonQuery').value.trim();
+  if (!KEY())  { toast('Enter Groq API key', 'error'); return; }
+  if (!fn)     { toast('Select a JSON file first', 'error'); return; }
+  if (!query)  { toast('Enter a query', 'error'); return; }
+  setBusy('jsonQueryTxt', 'jsonQueryLoad', true, '🤖 Run Query');
+  const d = await fetchJSON('/api/json/query', { filename: fn, folder: fol, query, api_key: KEY() });
+  setBusy('jsonQueryTxt', 'jsonQueryLoad', false, '🤖 Run Query');
+  if (d.error) { toast(d.error, 'error'); return; }
+  document.getElementById('jsonQueryResults').classList.remove('hidden');
+  document.getElementById('jsonCode').textContent = d.code;
+  document.getElementById('jsonQueryCount').textContent = `${d.row_count} rows`;
+  renderTable('jsonQueryRH', 'jsonQueryRB', d.columns, d.rows);
+  document.getElementById('jsonQueryExp').textContent = d.explanation;
+  toast('Query complete!', 'success');
+}
+
+
+
+async function loadSparkMode() {
+  // Target both the settings panel and overview stat cards
+  const settingsEl = document.getElementById('sparkModeContentSettings');
+  const stMode     = document.getElementById('st-spark-mode');
+  const stMaster   = document.getElementById('st-spark-master');
+
+  // Show loading in settings panel
+  if (settingsEl) settingsEl.innerHTML =
+    '<div class="alert alert-info" style="margin:0"><div class="loader" style="display:inline-block;margin-right:.5rem"></div>Loading…</div>';
+
+  const d = await fetchJSON('/api/spark/mode', null, 'GET', 6000);
+
+  if (!d || d.error) {
+    const msg = (!d || d.error?.includes('Cannot reach') || d.error?.includes('reach'))
+      ? '<div class="alert alert-error" style="margin:0">❌ Flask not running — start with <code>python app.py</code></div>'
+      : `<div class="alert alert-error" style="margin:0">❌ ${esc((d||{}).error||'Unknown error')}</div>`;
+    if (settingsEl) settingsEl.innerHTML = msg;
+    if (stMode)   stMode.textContent   = '?';
+    if (stMaster) stMaster.textContent = 'offline';
+    return;
+  }
+
+  // Update overview stat cards
+  if (stMode)   stMode.textContent   = d.icon + ' ' + d.mode;
+  if (stMaster) stMaster.textContent = d.master;
+
+  // Highlight the active mode in the dashboard switcher
+  const activeMode = d.master === 'yarn' ? 'yarn'
+    : (d.master || '').startsWith('spark://') ? 'standalone' : 'local';
+  selectMode(activeMode);
+
+  const modeColor = d.is_cluster ? 'var(--accent3)' : 'var(--warn)';
+  const hdfsColor = d.has_hdfs   ? 'var(--accent3)' : 'var(--muted)';
+
+  const cardsHtml = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.7rem;margin-bottom:.75rem">
+      <div style="background:var(--code);border:1px solid var(--border);border-radius:8px;padding:.85rem 1rem">
+        <div style="font-size:.6rem;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.07em;margin-bottom:.35rem">Execution Mode</div>
+        <div style="display:flex;align-items:center;gap:.5rem">
+          <span style="font-size:1.2rem">${d.icon}</span>
+          <span style="font-size:.88rem;font-weight:700;color:${modeColor}">${esc(d.mode)}</span>
+        </div>
+        <div style="font-size:.66rem;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-top:.3rem">${esc(d.master)}</div>
+      </div>
+      <div style="background:var(--code);border:1px solid var(--border);border-radius:8px;padding:.85rem 1rem">
+        <div style="font-size:.6rem;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.07em;margin-bottom:.35rem">HDFS / Storage</div>
+        <div style="font-size:.78rem;font-weight:600;color:${hdfsColor}">${d.has_hdfs ? '🐘 HDFS Connected' : '💾 Local Filesystem'}</div>
+        <div style="font-size:.64rem;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-top:.3rem;word-break:break-all">${esc(d.hdfs)}</div>
+      </div>
+      <div style="background:var(--code);border:1px solid var(--border);border-radius:8px;padding:.85rem 1rem">
+        <div style="font-size:.6rem;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.07em;margin-bottom:.35rem">Memory</div>
+        <div style="display:flex;gap:1.2rem">
+          <div><div style="font-size:.6rem;color:var(--muted);font-family:'JetBrains Mono',monospace">Driver</div><div style="font-size:.85rem;font-weight:700;color:var(--accent)">${esc(d.driver_mem)}</div></div>
+          <div><div style="font-size:.6rem;color:var(--muted);font-family:'JetBrains Mono',monospace">Executor</div><div style="font-size:.85rem;font-weight:700;color:var(--accent)">${esc(d.exec_mem)}</div></div>
+        </div>
+      </div>
+      <div style="background:var(--code);border:1px solid var(--border);border-radius:8px;padding:.85rem 1rem">
+        <div style="font-size:.6rem;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.07em;margin-bottom:.35rem">Executors / Cores</div>
+        <div style="display:flex;gap:1.2rem">
+          <div><div style="font-size:.6rem;color:var(--muted);font-family:'JetBrains Mono',monospace">Count</div><div style="font-size:.85rem;font-weight:700;color:var(--accent2)">${d.is_cluster ? esc(d.num_exec) : '—'}</div></div>
+          <div><div style="font-size:.6rem;color:var(--muted);font-family:'JetBrains Mono',monospace">Cores each</div><div style="font-size:.85rem;font-weight:700;color:var(--accent2)">${esc(d.exec_cores)}</div></div>
+        </div>
+      </div>
+    </div>`;
+
+  // ── Mode-specific switch guide ──────────────────────────────────────────────
+  let switchGuide = '';
+  if (!d.is_cluster) {
+    // Currently LOCAL → show WSL2 pseudo-distributed Hadoop setup guide
+    switchGuide = `
+    <div style="background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.25);border-radius:8px;padding:.9rem 1rem">
+      <div style="font-size:.75rem;font-weight:700;color:#f59e0b;margin-bottom:.7rem">🐘 Setup Hadoop on Windows (WSL2 Pseudo-Distributed)</div>
+      <div style="font-size:.71rem;color:#fcd34d;line-height:2">
+
+        <strong style="color:#f59e0b">PHASE 1 — Install WSL2 &amp; Java</strong><br>
+        <code style="display:block;background:rgba(0,0,0,.4);padding:.5rem .8rem;border-radius:6px;margin:.3rem 0 .6rem;font-size:.67rem;color:#a5f3fc;white-space:pre-wrap"># Run in PowerShell as Administrator
+wsl --install
+# Restart Windows, then open Ubuntu from Start Menu
+sudo apt update &amp;&amp; sudo apt upgrade -y
+sudo apt install openjdk-17-jdk -y
+java -version    # should show openjdk 17</code>
+
+        <strong style="color:#f59e0b">PHASE 2 — Install Hadoop 3.3.6</strong><br>
+        <code style="display:block;background:rgba(0,0,0,.4);padding:.5rem .8rem;border-radius:6px;margin:.3rem 0 .6rem;font-size:.67rem;color:#a5f3fc;white-space:pre-wrap">cd ~
+wget https://downloads.apache.org/hadoop/common/hadoop-3.3.6/hadoop-3.3.6.tar.gz
+tar -xzf hadoop-3.3.6.tar.gz
+mv hadoop-3.3.6 hadoop</code>
+
+        <strong style="color:#f59e0b">PHASE 3 — Configure environment (~/.bashrc)</strong><br>
+        <code style="display:block;background:rgba(0,0,0,.4);padding:.5rem .8rem;border-radius:6px;margin:.3rem 0 .6rem;font-size:.67rem;color:#a5f3fc;white-space:pre-wrap">echo 'export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64' >> ~/.bashrc
+echo 'export HADOOP_HOME=~/hadoop' >> ~/.bashrc
+echo 'export PATH=$PATH:$HADOOP_HOME/bin:$HADOOP_HOME/sbin' >> ~/.bashrc
+source ~/.bashrc</code>
+
+        <strong style="color:#f59e0b">PHASE 4 — Configure Hadoop XML files</strong><br>
+        Edit <code>~/hadoop/etc/hadoop/core-site.xml</code> — add inside &lt;configuration&gt;:<br>
+        <code style="display:block;background:rgba(0,0,0,.4);padding:.5rem .8rem;border-radius:6px;margin:.3rem 0 .6rem;font-size:.67rem;color:#a5f3fc;white-space:pre-wrap">&lt;property&gt;&lt;name&gt;fs.defaultFS&lt;/name&gt;&lt;value&gt;hdfs://localhost:9000&lt;/value&gt;&lt;/property&gt;</code>
+        Edit <code>~/hadoop/etc/hadoop/hdfs-site.xml</code> — add inside &lt;configuration&gt;:<br>
+        <code style="display:block;background:rgba(0,0,0,.4);padding:.5rem .8rem;border-radius:6px;margin:.3rem 0 .6rem;font-size:.67rem;color:#a5f3fc;white-space:pre-wrap">&lt;property&gt;&lt;name&gt;dfs.replication&lt;/name&gt;&lt;value&gt;1&lt;/value&gt;&lt;/property&gt;</code>
+
+        <strong style="color:#f59e0b">PHASE 5 — Setup SSH &amp; Format HDFS</strong><br>
+        <code style="display:block;background:rgba(0,0,0,.4);padding:.5rem .8rem;border-radius:6px;margin:.3rem 0 .6rem;font-size:.67rem;color:#a5f3fc;white-space:pre-wrap">sudo apt install openssh-server -y
+ssh-keygen -t rsa -P '' -f ~/.ssh/id_rsa
+cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
+chmod 0600 ~/.ssh/authorized_keys
+ssh localhost   # should connect without password
+hdfs namenode -format   # format HDFS (first time only)</code>
+
+        <strong style="color:#f59e0b">PHASE 6 — Start Hadoop &amp; Test</strong><br>
+        <code style="display:block;background:rgba(0,0,0,.4);padding:.5rem .8rem;border-radius:6px;margin:.3rem 0 .6rem;font-size:.67rem;color:#a5f3fc;white-space:pre-wrap">start-dfs.sh
+start-yarn.sh
+hdfs dfsadmin -report   # should show DataNode info
+# Open in browser: http://localhost:9870 (NameNode UI)</code>
+
+        <strong style="color:#f59e0b">PHASE 7 — Update your .env &amp; restart Flask</strong><br>
+        <code style="display:block;background:rgba(0,0,0,.4);padding:.5rem .8rem;border-radius:6px;margin:.3rem 0 .4rem;font-size:.67rem;color:#a5f3fc;white-space:pre-wrap">SPARK_MASTER=yarn
+HDFS_NAMENODE=hdfs://localhost:9000
+YARN_RESOURCE_MANAGER=localhost:8032
+SPARK_EXECUTOR_MEMORY=2g
+SPARK_EXECUTOR_CORES=2
+SPARK_NUM_EXECUTORS=2</code>
+        Then restart: <code>python app.py</code> — files uploaded via Datasets tab auto-sync to HDFS ✅
+      </div>
+    </div>`;
+  } else {
+    // Currently CLUSTER → show how to switch back to local
+    switchGuide = `
+    <div style="background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.25);border-radius:8px;padding:.85rem 1rem">
+      <div style="font-size:.72rem;font-weight:700;color:#10b981;margin-bottom:.55rem">💻 How to switch back to Local Mode</div>
+      <div style="font-size:.72rem;color:#6ee7b7;line-height:1.8">
+        <strong>Step 1</strong> — Open your <code>.env</code> file and change to:<br>
+        <code style="display:block;background:rgba(0,0,0,.35);padding:.45rem .7rem;border-radius:5px;margin:.35rem 0;font-size:.68rem;color:#a5f3fc">SPARK_MASTER=local[*]
+SPARK_DRIVER_MEMORY=2g
+# Comment out or remove HDFS_NAMENODE and YARN_RESOURCE_MANAGER</code>
+        <strong>Step 2</strong> — Restart Flask: <code>python app.py</code><br>
+        <strong>Step 3</strong> — Upload CSV/XLSX/JSON files through the Datasets tab (local disk)<br>
+        <strong>Note:</strong> local[*] uses all CPU cores on your machine. Use local[2] to limit to 2 cores.
+      </div>
+    </div>`;
+  }
+
+  if (settingsEl) settingsEl.innerHTML = cardsHtml + switchGuide;
+}
+
+
+async function checkJavaStatus() {
+  const banner = document.getElementById('sparkJavaBanner');
+  const inlineBadge = null; // removed from UI
+  if (!banner && !inlineBadge) return;
+  const d = await fetchJSON('/api/spark/java', null, 'GET', 8000);
+  if (!d || d.error) return;
+
+  const tipBanner = document.getElementById('sparkTipBanner');
+  if (!d.java_ok) {
+    if (tipBanner) tipBanner.style.display = 'none';
+    banner.innerHTML = `
+      <div style="background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.3);border-radius:10px;padding:.85rem 1.1rem;margin-bottom:.75rem">
+        <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem">
+          <span style="font-size:1.1rem">☕</span>
+          <strong style="color:#f59e0b;font-size:.82rem">Java (JDK) Not Found — Spark requires Java 8, 11 or 17</strong>
+        </div>
+        <div style="font-size:.74rem;color:#fcd34d;line-height:2">
+          <strong>Running Flask from WSL2?</strong> (recommended for Hadoop+YARN)<br>
+          <code style="display:block;background:rgba(0,0,0,.3);padding:.35rem .6rem;border-radius:4px;margin:.25rem 0 .5rem">sudo apt install openjdk-17-jdk -y
+echo 'export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64' >> ~/.bashrc
+source ~/.bashrc &amp;&amp; python app.py</code>
+          <strong>Or add to your <code>.env</code>:</strong>
+          <code style="display:block;background:rgba(0,0,0,.3);padding:.35rem .6rem;border-radius:4px;margin:.25rem 0">JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64</code>
+        </div>
+      </div>`;
+    return;
+  }
+
+  // Java found — check version
+  const jver     = d.version || '';
+  const m        = jver.match(/version "?(\d+)(?:\.(\d+))?/);
+  const major    = m ? (parseInt(m[1]) === 1 ? parseInt(m[2] || 8) : parseInt(m[1])) : 0;
+  const javaGood = major >= 8 && major <= 17;
+
+  if (!javaGood && major > 17) {
+    // Java 21+ — may work but not officially supported by PySpark 3.x
+    banner.innerHTML = `
+      <div style="background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.2);border-radius:8px;padding:.65rem 1rem;margin-bottom:.5rem;display:flex;gap:.6rem;align-items:flex-start">
+        <span style="font-size:1rem;margin-top:.05rem">☕</span>
+        <div style="font-size:.73rem;line-height:1.75">
+          <strong style="color:#f59e0b">Java ${major} detected</strong>
+          <span style="color:#fcd34d"> — ${esc(jver)} · PySpark ${esc(d.pyspark_ver)}</span><br>
+          <span style="color:var(--muted)">Java 21+ is <em>not officially supported</em> by PySpark 3.x.
+          It may still work. If you get Spark errors, install JDK 17 from
+          <a href="https://adoptium.net" target="_blank" style="color:var(--accent)">adoptium.net</a>
+          and point <code>JAVA_HOME</code> to it in your <code>.env</code>.</span>
+        </div>
+      </div>`;
+  } else {
+    // Java 8 / 11 / 17 — fully supported
+    const okHtml = `<div style="display:flex;align-items:center;gap:.6rem;background:rgba(16,185,129,.07);border:1px solid rgba(16,185,129,.2);border-radius:8px;padding:.55rem .9rem;margin-bottom:.5rem;font-size:.73rem;color:#6ee7b7;font-family:'JetBrains Mono',monospace">
+        <span>☕</span>
+        <span><strong style="color:#10b981">Java ${major} — Ready for Spark</strong> &nbsp;·&nbsp; ${esc(jver)} &nbsp;·&nbsp; PySpark ${esc(d.pyspark_ver)}</span>
+      </div>`;
+    if (banner) { banner.innerHTML = ''; }  // clear any previous error
+    if (tipBanner) tipBanner.style.display = '';  // show tip banner
+    if (inlineBadge) inlineBadge.innerHTML = `<span style="color:#10b981">☕ Java ${major} · PySpark ${esc(d.pyspark_ver)}</span>`;
+  }
+}
+
+
+async function loadHdfsStatus() {
+  const el = document.getElementById('hdfsStatusContent');
+  if (!el) return;
+  el.innerHTML = '<div class="alert alert-info" style="margin:0"><div class="loader" style="display:inline-block;margin-right:.5rem"></div>Checking HDFS…</div>';
+
+  const d = await fetchJSON('/api/hdfs/status', null, 'GET', 10000);
+
+  if (!d || d.error) {
+    el.innerHTML = `<div class="alert alert-error" style="margin:0">❌ ${esc((d||{}).error || 'Could not reach Flask')}</div>`;
+    return;
+  }
+
+  if (!d.configured) {
+    el.innerHTML = `
+      <div style="background:rgba(100,116,139,.1);border:1px solid var(--border);border-radius:8px;padding:.85rem 1rem">
+        <div style="font-size:.78rem;color:var(--muted);margin-bottom:.4rem">💾 <strong style="color:var(--text)">Local Filesystem Mode</strong></div>
+        <div style="font-size:.72rem;color:var(--muted);line-height:1.7">
+          HDFS is not configured. Files are stored locally in <code>data/raw/</code>.<br>
+          To enable HDFS, add <code>HDFS_NAMENODE=hdfs://your-namenode:9000</code> to your <code>.env</code> file.
+        </div>
+      </div>`;
+    return;
+  }
+
+  // HDFS is configured — show connection info + file list
+  const files = d.files || [];
+  const fileRows = files.length
+    ? files.map(f => `
+        <tr>
+          <td style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--accent)">${esc(f.name)}</td>
+          <td style="font-size:.7rem;color:var(--muted)">${esc(f.path)}</td>
+          <td style="font-size:.7rem;color:var(--accent2);text-align:right">${esc(f.size)} B</td>
+          <td style="font-size:.7rem;color:var(--muted)">${esc(f.modified)}</td>
+        </tr>`).join('')
+    : `<tr><td colspan="4" style="color:var(--muted);font-size:.72rem;padding:.5rem">No files found in /data/ — upload a file first</td></tr>`;
+
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;gap:.6rem;background:rgba(16,185,129,.07);border:1px solid rgba(16,185,129,.2);border-radius:8px;padding:.6rem .9rem;margin-bottom:.75rem;font-size:.74rem">
+      <span>🐘</span>
+      <span><strong style="color:#10b981">HDFS Connected</strong> — ${esc(d.namenode)} &nbsp;·&nbsp; ${d.file_count} file${d.file_count!==1?'s':''} in /data/</span>
+    </div>
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:.72rem">
+        <thead>
+          <tr style="border-bottom:1px solid var(--border)">
+            <th style="text-align:left;padding:.3rem .5rem;color:var(--muted);font-size:.65rem">NAME</th>
+            <th style="text-align:left;padding:.3rem .5rem;color:var(--muted);font-size:.65rem">HDFS PATH</th>
+            <th style="text-align:right;padding:.3rem .5rem;color:var(--muted);font-size:.65rem">SIZE</th>
+            <th style="text-align:left;padding:.3rem .5rem;color:var(--muted);font-size:.65rem">MODIFIED</th>
+          </tr>
+        </thead>
+        <tbody>${fileRows}</tbody>
+      </table>
+    </div>`;
+}
+
+
+const _ENV_BLOCKS = {
+  local: {
+    tag: '💻 Local Mode',
+    color: 'var(--warn)',
+    env: `# ── Local Mode (no cluster needed) ──────────────────
+SPARK_MASTER=local[*]
+SPARK_DRIVER_MEMORY=2g
+SPARK_EXECUTOR_MEMORY=2g
+SPARK_SHUFFLE_PARTITIONS=4
+SPARK_APP_NAME=AIDataEngineerAssistant
+# Comment out or remove HDFS_NAMENODE and YARN_RESOURCE_MANAGER`,
+    steps: `<strong style="color:var(--text)">Steps to activate:</strong><br>
+1. Paste the above into your <code>.env</code> file<br>
+2. Remove or comment out <code>HDFS_NAMENODE</code> and <code>YARN_RESOURCE_MANAGER</code> lines<br>
+3. Restart Flask: <code>python app.py</code><br>
+4. Upload files via the Datasets tab — they go to <code>data/raw/</code> on local disk ✅`
+  },
+  yarn: {
+    tag: '🐘 Hadoop YARN',
+    color: 'var(--accent3)',
+    env: `# ── Hadoop YARN Cluster ──────────────────────────────
+SPARK_MASTER=yarn
+HDFS_NAMENODE=hdfs://localhost:9000
+YARN_RESOURCE_MANAGER=localhost:8032
+SPARK_DRIVER_MEMORY=4g
+SPARK_EXECUTOR_MEMORY=2g
+SPARK_EXECUTOR_CORES=2
+SPARK_NUM_EXECUTORS=2
+SPARK_APP_NAME=AIDataEngineerAssistant
+# WSL2 pseudo-distributed: use localhost
+# Real cluster: replace localhost with your namenode hostname`,
+    steps: `<strong style="color:var(--text)">Steps to activate:</strong><br>
+1. Make sure Hadoop is running: <code>start-dfs.sh &amp;&amp; start-yarn.sh</code><br>
+2. Verify HDFS is up: <code>hdfs dfsadmin -report</code><br>
+3. Paste the above into your <code>.env</code> file (update hostnames if using a real cluster)<br>
+4. Restart Flask: <code>python app.py</code><br>
+5. Upload a file via Datasets tab — it auto-syncs to HDFS ✅<br>
+<span style="color:var(--muted)">⚠️ Hadoop not installed yet? See the WSL2 setup guide in Settings → Execution Environment</span>`
+  },
+  standalone: {
+    tag: '⚡ Standalone',
+    color: 'var(--accent)',
+    env: `# ── Spark Standalone Cluster ─────────────────────────
+SPARK_MASTER=spark://master-host:7077
+SPARK_DRIVER_MEMORY=4g
+SPARK_EXECUTOR_MEMORY=4g
+SPARK_EXECUTOR_CORES=2
+SPARK_NUM_EXECUTORS=4
+SPARK_APP_NAME=AIDataEngineerAssistant
+# Replace master-host with your Spark master hostname`,
+    steps: `<strong style="color:var(--text)">Steps to activate:</strong><br>
+1. Start your Spark master: <code>$SPARK_HOME/sbin/start-master.sh</code><br>
+2. Start workers: <code>$SPARK_HOME/sbin/start-worker.sh spark://master-host:7077</code><br>
+3. Paste the above into your <code>.env</code> file<br>
+4. Restart Flask: <code>python app.py</code> ✅`
+  }
+};
+
+let _selectedMode = null;
+
+function selectMode(mode) {
+  _selectedMode = mode;
+  const block = _ENV_BLOCKS[mode];
+  ['local','yarn','standalone'].forEach(m => {
+    const btn = document.getElementById('switchBtn' + m.charAt(0).toUpperCase() + m.slice(1));
+    if (btn) btn.classList.toggle('active', m === mode);
+  });
+  const content = document.getElementById('modeSwitchContent');
+  const envText = document.getElementById('modeEnvText');
+  const steps   = document.getElementById('modeStepsBlock');
+  const tag     = document.getElementById('currentModeTag');
+  if (content) content.style.display = 'block';
+  if (envText) envText.textContent = block.env;
+  if (steps)   steps.innerHTML     = block.steps;
+  if (tag) { tag.textContent = block.tag; tag.style.color = block.color; }
+}
+
+
+
+function editChatMsg(msgId) {
+  const bodyEl = document.getElementById(msgId + '-body');
+  const msgEl  = document.getElementById(msgId);
+  if (!bodyEl || !msgEl) return;
+
+  // If already editing, do nothing
+  if (msgEl.querySelector('.edit-input')) return;
+
+  const originalText = bodyEl.getAttribute('data-raw') || bodyEl.textContent.trim();
+
+  // Replace body with editable textarea
+  bodyEl.style.display = 'none';
+
+  const editArea = document.createElement('textarea');
+  editArea.className = 'edit-input';
+  editArea.value = originalText;
+  editArea.style.cssText = `
+    width:100%; min-height:60px; background:var(--code); border:1px solid var(--accent);
+    border-radius:7px; padding:.5rem .7rem; font-size:.82rem; color:var(--text);
+    font-family:inherit; resize:vertical; outline:none; box-sizing:border-box;
+  `;
+
+  const btnRow = document.createElement('div');
+  btnRow.style.cssText = 'display:flex;gap:.4rem;margin-top:.4rem;justify-content:flex-end';
+
+  const cancelBtn = document.createElement('button');
+  cancelBtn.textContent = 'Cancel';
+  cancelBtn.style.cssText = 'background:none;border:1px solid var(--border);border-radius:5px;padding:.2rem .6rem;font-size:.7rem;color:var(--muted);cursor:pointer';
+  cancelBtn.onclick = () => {
+    editArea.remove();
+    btnRow.remove();
+    bodyEl.style.display = '';
+  };
+
+  const sendBtn = document.createElement('button');
+  sendBtn.textContent = '↵ Send';
+  sendBtn.style.cssText = 'background:var(--accent);border:none;border-radius:5px;padding:.2rem .7rem;font-size:.7rem;color:#fff;cursor:pointer;font-weight:600';
+  sendBtn.onclick = async () => {
+    const newText = editArea.value.trim();
+    if (!newText) return;
+
+    // Update the displayed message body
+    bodyEl.textContent = newText;
+    bodyEl.setAttribute('data-raw', newText);
+    bodyEl.style.display = '';
+    editArea.remove();
+    btnRow.remove();
+
+    // Remove all messages after this one (bot reply etc.)
+    let next = msgEl.nextElementSibling;
+    while (next) {
+      const toRemove = next;
+      next = next.nextElementSibling;
+      toRemove.remove();
+    }
+
+    // Re-send the edited message
+    const chatInput = document.getElementById('chatInput');
+    if (chatInput) chatInput.value = newText;
+    await sendChat(newText);
+  };
+
+  // Allow Ctrl+Enter to send
+  editArea.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && e.ctrlKey) { e.preventDefault(); sendBtn.click(); }
+    if (e.key === 'Escape') cancelBtn.click();
+  });
+
+  btnRow.appendChild(cancelBtn);
+  btnRow.appendChild(sendBtn);
+  msgEl.querySelector('div[style]').appendChild(editArea);
+  msgEl.querySelector('div[style]').appendChild(btnRow);
+  editArea.focus();
+  editArea.setSelectionRange(editArea.value.length, editArea.value.length);
+}
+
+function copyText(btn) {
+  const text = btn.getAttribute('data-text') || '';
+  navigator.clipboard.writeText(text)
+    .then(() => {
+      const orig = btn.textContent;
+      btn.textContent = '✅ Copied';
+      btn.style.color = '#10b981';
+      setTimeout(() => { btn.textContent = orig; btn.style.color = ''; }, 2000);
+    })
+    .catch(() => toast('Copy failed — select text manually', 'error'));
+}
+
+function copyEnvBlock() {
+  if (!_selectedMode) return;
+  const text = _ENV_BLOCKS[_selectedMode].env;
+  navigator.clipboard.writeText(text).then(() => toast('Copied to clipboard!', 'success'))
+    .catch(() => toast('Copy failed — select manually', 'error'));
+}
+
+function showEnvTab(tab) {
+  ['local','yarn','standalone'].forEach(t => {
+    const content = document.getElementById('env' + t.charAt(0).toUpperCase() + t.slice(1));
+    const btn     = document.getElementById('envTab' + t.charAt(0).toUpperCase() + t.slice(1));
+    if (content) content.classList.toggle('hidden', t !== tab);
+    if (btn)     btn.classList.toggle('active', t === tab);
+  });
+}
+
+async function handleJsonUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const status = document.getElementById('jsonUploadStatus');
+  status.classList.remove('hidden');
+  status.innerHTML = '<div class="alert alert-info"><div class="loader"></div>&nbsp;Uploading...</div>';
+  const fd = new FormData();
+  fd.append('file', file);
+  try {
+    const r = await apiFetch('/api/upload', { method: 'POST', body: fd }, 120000);
+    const d = await r.json();
+    if (d.error) {
+      status.innerHTML = `<div class="alert alert-error">❌ ${esc(d.error)}</div>`;
+      toast(d.error, 'error');
+    } else {
+      const hdfsInfo = d.hdfs?.ok
+        ? ` <span style="color:#10b981;font-size:.7rem">🐘 Synced to HDFS</span>`
+        : (d.hdfs && !d.hdfs.skipped && d.hdfs.error)
+          ? ` <span style="color:#f59e0b;font-size:.7rem">⚠️ HDFS: ${esc(d.hdfs.error)}</span>`
+          : '';
+      status.innerHTML = `<div class="alert alert-success">✅ ${esc(d.message)}${hdfsInfo}</div>`;
+      toast(d.message, 'success');
+      await loadJsonFiles();
+      // Auto-select the uploaded file
+      const sel = document.getElementById('jsonFile');
+      if (sel) {
+        for (let i = 0; i < sel.options.length; i++) {
+          if (sel.options[i].value === d.filename) { sel.selectedIndex = i; break; }
+        }
+      }
+    }
+  } catch(err) {
+    status.innerHTML = `<div class="alert alert-error">❌ ${esc(err.message)}</div>`;
+    toast(err.message, 'error');
+  }
+}
+
+// ══ Drag & drop ══
+const _zone = document.getElementById('uploadZone');
+if (_zone) {
+  _zone.addEventListener('dragover', e => { e.preventDefault(); _zone.classList.add('drag'); });
+  _zone.addEventListener('dragleave', () => _zone.classList.remove('drag'));
+  _zone.addEventListener('drop', e => {
+    e.preventDefault(); _zone.classList.remove('drag');
+    const f = e.dataTransfer.files[0]; if (f) uploadFile(f);
+  });
+}
+const _jzone = document.getElementById('jsonUploadZone');
+if (_jzone) {
+  _jzone.addEventListener('dragover', e => { e.preventDefault(); _jzone.classList.add('drag'); });
+  _jzone.addEventListener('dragleave', () => _jzone.classList.remove('drag'));
+  _jzone.addEventListener('drop', e => {
+    e.preventDefault(); _jzone.classList.remove('drag');
+    const f = e.dataTransfer.files[0];
+    if (f) {
+      const input = document.getElementById('jsonFileInput');
+      const dt = new DataTransfer(); dt.items.add(f);
+      input.files = dt.files;
+      handleJsonUpload({ target: input });
+    }
+  });
+}
+
+// ══ Init ══
+document.getElementById('apiKey').addEventListener('input', e => {
+  const sk = document.getElementById('settingsKey'); if (sk) sk.value = e.target.value;
+});
+window.addEventListener('load', () => { loadAll(); loadSparkMode(); checkJavaStatus(); });
+</script>
+</body>
+</html>
