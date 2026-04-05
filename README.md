@@ -11,12 +11,12 @@ An intelligent and efficient web application for *big data analytics* — featur
 ---
 
 <p align="center">
-  <img src="docs/page-01.png" width="45%" />
-  <img src="docs/page-02.png" width="45%" />
-  <img src="docs/page-03.png" width="45%" />
-  <img src="docs/page-04.png" width="45%" />
-  <img src="docs/page-05.png" width="45%" />
-  <img src="docs/page-06.png" width="45%" />
+  <img src="templates/docs/page-01.png" width="45%" />
+  <img src="templates/docs/page-02.png" width="45%" />
+  <img src="templates/docs/page-03.png" width="45%" />
+  <img src="templates/docs/page-04.png" width="45%" />
+  <img src="templates/docs/page-05.png" width="45%" />
+  <img src="templates/docs/page-06.png" width="45%" />
 </p>
 
 ---
